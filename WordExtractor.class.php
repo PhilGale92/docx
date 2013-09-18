@@ -237,12 +237,20 @@
 								$indent = 1;
 							
 							if ($listIndentLevel < $indent){
-								$text = '<ul><li>' . $text;
+								$openUlText = '';
+								for ($x = $listIndentLevel; $x < $indent; $x++)
+									$openUlText .= '<ul>';
+								
+								$text = $openUlText . '<li>' . $text;
 								
 							} elseif ($listIndentLevel == $indent) {
 								$text = '<li>' . $text;
 							} else {
-								$text .= '</ul><li>' . $text;
+								$closeUlText = '';
+								for ($x = $listIndentLevel; $x > $indent; $x--)
+									$closeUlText .= '</ul>';
+								
+								$text = $closeUlText . '<li>' . $text;
 							}
 							$text .= '</li>';
 							$listIndentLevel = $indent;
