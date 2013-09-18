@@ -15,23 +15,8 @@
 		 *  - Pass null as a tag and the element will not be rendered
 		 */
 		private static $_styles = array(
-			'Ahead' => array('tag' => 'h1'),
-			'Chapterheading' => array('tag' => 'h1'),
-			'2Sectionheadinggreen' => array('tag' => 'h2'),
-			'1Topicheadinggreen' => array('tag' => 'h3'),
-			'4Emphasissubheadinggreen' => array('tag' => 'h4'),
-			'6NICEHEADINGgreen' => array('tag' => 'h5'),
-			
-			'3Bodytextgreen' => array('tag' => 'p'),
-			'BodyText1' => array('tag' => 'p'),
-			'7NICEBodytextgreen' => array('tag' => 'p'),
-			'9FinBoxBodytextgreen' => array('tag' => 'p'),
-			'4BoldEMPHASISgreen' => array('tag' => 'p'),
-			'8HedFinBoxgreen' => array('tag' => 'p'),
-			'NICEtext' => array('tag' => 'p'),
-			
-			'0Deletedtext' => array('tag' => null),
-			'5Authorsnotegreen' => array('tag' => null),
+			# Add styles in here
+			# 'exampleHeader' => array('tag' => 'h1'),
 		);
 		
 		/**
