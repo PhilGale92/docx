@@ -2,6 +2,7 @@
 	/**
 	 * 
 	 * @author Phil Gale
+	 * @desc This class adds rendering functionality to the WordExtractor object
 	 *
 	 */
 	class WordRender extends WordExtractor {
