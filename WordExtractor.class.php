@@ -193,7 +193,7 @@
 		 * @return NULL|multitype:string
 		 */
 		protected function _parseNode($node, $type){
-			static $ulOpen = false;
+			static $listIndentLevel = 0;
 			
 			if ($type == 'p'){
 				$nodeArray = WordExtractor::_getArray($node);
@@ -228,16 +228,27 @@
 				if (isset($nodeArray['w:pPr'])){
 					$nodeStyle = $nodeArray['w:pPr'];
 					if (is_array($nodeStyle)){
+						
 						if (isset($nodeStyle[0]['w:numPr'][0])){
-							if (!$ulOpen){
+							# We want this index to start from 1, so no indent can be thought of as '0', ilvl indentation starts at 0, so we + 1 to it.
+							if (isset($nodeStyle[0]['w:numPr'][0]['w:ilvl'][0]['w:val']))
+								$indent = $nodeStyle[0]['w:numPr'][0]['w:ilvl'][0]['w:val'] + 1;
+							else
+								$indent = 1;
+							
+							if ($listIndentLevel < $indent){
 								$text = '<ul><li>' . $text;
-								$ulOpen = true;
-							} else
+								
+							} elseif ($listIndentLevel == $indent) {
 								$text = '<li>' . $text;
+							} else {
+								$text .= '</ul><li>' . $text;
+							}
 							$text .= '</li>';
+							$listIndentLevel = $indent;
 						} else {
-							if ($ulOpen){
-								$ulOpen = false;
+							for ($x = $listIndentLevel; $x > 0; $x--){
+								$listIndentLevel--;
 								$this->parsed[$this->_lastPTag]['text'] .= '</ul>';
 							}
 						}
