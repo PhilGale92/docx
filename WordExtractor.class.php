@@ -1,6 +1,6 @@
 <?php
 	/**
-	 * @author Phil Gale - www.red-wing.co.uk 
+	 * @author Phil Gale - philgale.co.uk
 	 * @desc Just create an instance of this object while passing an absolute uri to the .docx file, and watch the magic happen
 	 * @name WordExtractor
 	 */
