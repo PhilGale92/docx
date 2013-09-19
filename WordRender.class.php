@@ -31,9 +31,10 @@
 		 * @desc Takes $this->parsed and converts the parsed docx file into a full string of html
 		 */
 		public function toHtml(){
-			$html = '';
-			$currentIndent = 0;
+			$htmlArray = array();
+			$listItems = array();
 			foreach ($this->parsed as $i => $node){
+				$html = '';
 				switch ($node['type']){
 					case 'p':
 						# Check if it was parsed as a list, or standard paragraph
@@ -59,43 +60,48 @@
 								}
 							}
 						}
+						$htmlArray[$i] = $html;
 					break;
 					case 'list_item':
-						$newIndent = $node['indent'];
-						
-						# Get the last element, if it wasnt a list item, start the root ul tag
-						if (isset($this->parsed[$i - 1])){
-							if ($this->parsed[$i - 1]['type'] != 'list_item'){
-								$html .= '<ul>';
+						if (!isset($activeIndentation))
+							$activeIndentation = $node['indent'];
+						else {
+							if ($activeIndentation < $node['indent']){
+								$indentI = 0;
+								for ($loopI = $activeIndentation; $loopI < $node['indent']; $loopI++ ){
+									$indentI++;
+								}
+								$listItems[$i - 1]['open_ul_count'] = $indentI;
+							} else {
+								$indentI = 0;
+								for ($loopI = $activeIndentation; $loopI > $node['indent']; $loopI-- ){
+									$indentI++;
+								}
+								$node['close_ul_count'] = $indentI;
 							}
 						}
 						
-						if ($newIndent > $currentIndent){
-							for ($x = $currentIndent; $x < $newIndent; $x++){
-								$html .= '<ul>';
-							}
-							$html .= '<li>' . $node['text'] . '</li>';
-						} elseif ($newIndent == $currentIndent){
-							$html .= '<li>' . $node['text'] . '</li>';
-						} else {
-							for ($x = $newIndent; $x < $currentIndent; $x++){
-								$html .= '</ul>';
-							}
-						}
+						$calcClosingTags = false;
 						
-						# Get the next element, if it isnt a list item end the root ul tag
 						if (isset($this->parsed[$i + 1])){
 							if ($this->parsed[$i + 1]['type'] != 'list_item'){
-								$html .= '</ul>';
+								$calcClosingTags = true;
 							}
+						} else $calcClosingTags = true;
+						
+						if ($calcClosingTags){
+							if ($node['indent'] != 0){
+								$node['lastClosingTags'] = $node['indent'] + 1;
+							} else $node['lastClosingTags'] = 1;
 						}
 						
-						$currentIndent = $newIndent;
-						
+						$listItems[$i] = $node;
+						$activeIndentation = $node['indent'];
 					break;
 					case 'image':
 						$imageInfo = explode(".", $node['name']);
 						$html .=  '<img width="' . $node['w'] . '" height="' . $node['h'] . '" title="' . $imageInfo[0] . '" src="data:image/' . $imageInfo[1] . ';base64,' . $node['data'] . '" alt="" />';
+						$htmlArray[$i] = $html;
 					break;
 					case 'table':
 						$html .= '<table>';
@@ -136,10 +142,58 @@
 								$html .= '</tr>';
 							}
 						$html .= '</table>';
+						$htmlArray[$i] = $html;
 					break;
 				}
 			}
-			$this->html = $html;
+			
+			$this->listItems = $listItems;
+			$this->html = $htmlArray;
+		}
+		
+		/**
+		 * @name _renderLists
+		 * @desc This outputs the lists as html - they require an extra step from the other types of content as they modify their sibiling elements to check if a new ul tag has to be opened or closed
+		 */
+		protected function _renderLists(){
+			foreach ($this->listItems as $key => $listItem){
+				$html = '';
+				
+				if (!isset($this->listItems[$key - 1])) $html .= '<ul>';
+				
+				if (isset($listItem['close_ul_count'])){
+					for ($i = 0; $i < $listItem['close_ul_count']; $i++){
+						$html .= '</ul></li>';
+				
+					}
+				}
+				$html .= '<li>' . $listItem['text'] ;
+				if (isset($listItem['open_ul_count'])) $html .= '<ul>'; else $html .= '</li>';
+				
+				if (isset($listItem['lastClosingTags'])){
+					for ($i = 0; $i < $listItem['lastClosingTags']; $i++){
+						$html .= '</ul>';
+						if (($i + 1) < $listItem['lastClosingTags']){
+							$html .= '</li>';
+						}
+					}
+				}
+				$this->html[$key] = $html;
+			}
+		}
+		
+		/**
+		 * @name render
+		 * @desc Turns the ->html array into a string of text, which is stored in ->rendered
+		 */
+		public function render(){
+			$this->_renderLists();
+			
+			$html = '';
+			foreach ($this->html as $i => $htmlstring){
+				$html .= $htmlstring;
+			}
+			$this->rendered = $html;
 		}
 		
 		/**
@@ -150,7 +204,10 @@
 			if (!isset($this->html)){
 				$this->toHtml();
 			}
+			if (!isset($this->rendered)){
+				$this->render();
+			}
 			
-			return $this->html;
+			return $this->rendered;
 		}
 	}
