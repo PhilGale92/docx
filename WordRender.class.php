@@ -71,7 +71,8 @@
 								for ($loopI = $activeIndentation; $loopI < $node['indent']; $loopI++ ){
 									$indentI++;
 								}
-								$listItems[$i - 1]['open_ul_count'] = $indentI;
+								if (isset($listItems[$i - 1]))
+									$listItems[$i - 1]['open_ul_count'] = $indentI;
 							} else {
 								$indentI = 0;
 								for ($loopI = $activeIndentation; $loopI > $node['indent']; $loopI-- ){
