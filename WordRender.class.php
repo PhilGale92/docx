@@ -106,14 +106,14 @@
 					break;
 					case 'table':
 						$html .= '<table>';
-							foreach ($node['rows'] as $i => $row){
+							foreach ($node['rows'] as $intI => $row){
 								if ($row['headers'] == true)
 									$html .= '<tr class="headers">';
 								else 
 									$html .= '<tr>';
 								
-								if (isset($row[$i][0])){
-									foreach ($row[$i] as $ii => $cell){
+								if (isset($row[$intI][0])){
+									foreach ($row[$intI] as $ii => $cell){
 										$colspan = '';
 										if (isset($cell['colspan'])){
 											if ($cell['colspan'] > 1){
@@ -128,15 +128,15 @@
 									}
 								} else {
 									$colspan = '';
-									if (isset($row[$i]['colspan'])){
-										if ($row[$i]['colspan'] > 1){
-											$colspan = ' colspan="' . $row[$i]['colspan'] . '" ';
+									if (isset($row[$intI]['colspan'])){
+										if ($row[$intI]['colspan'] > 1){
+											$colspan = ' colspan="' . $row[$intI]['colspan'] . '" ';
 										}
 									}
 									if ($row['headers'] == true){
-										$html .= '<th class="col_1" ' . $colspan . '>' . $row[$i]['text'] . '</th>';
+										$html .= '<th class="col_1" ' . $colspan . '>' . $row[$intI]['text'] . '</th>';
 									} else {
-										$html .= '<td class="col_1" ' . $colspan . '>' . $row[$i]['text'] . '</td>';
+										$html .= '<td class="col_1" ' . $colspan . '>' . $row[$intI]['text'] . '</td>';
 									}
 								}
 								
@@ -168,6 +168,7 @@
 				
 					}
 				}
+				
 				$html .= '<li>' . $listItem['text'] ;
 				if (isset($listItem['open_ul_count'])) $html .= '<ul>'; else $html .= '</li>';
 				
@@ -189,6 +190,7 @@
 		 */
 		public function render(){
 			$this->_renderLists();
+			ksort($this->html);
 			
 			$html = '';
 			foreach ($this->html as $i => $htmlstring){
