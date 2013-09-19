@@ -98,7 +98,7 @@
 				$elements = $dom->getElementsByTagName('*');
 				foreach ($elements as $node) {
 					if ($node->nodeName == 'Relationship'){
-						$nodeArr = WordExtractor::_getArray($node);
+						$nodeArr = self::_getArray($node);
 						if (strpos($nodeArr['Target'], 'media/') !== false){
 							if (isset($nodeArr['Target']) && isset($nodeArr['Id'])){
 								$imageName = substr($nodeArr['Target'], 6);
@@ -194,7 +194,7 @@
 		 */
 		protected function _parseNode($node, $type){
 			if ($type == 'p'){
-				$nodeArray = WordExtractor::_getArray($node);
+				$nodeArray = self::_getArray($node);
 				$text = '';
 				if (isset($nodeArray['w:r'])){
 					if ($this->_skipCountP > 0){
@@ -204,7 +204,7 @@
 					if (is_array($nodeArray['w:r'])){
 						foreach ($nodeArray['w:r'] as $i => $row){
 							if (isset($row['w:tab'])){
-								$text .= WordExtractor::$_tabPlaceholder;
+								$text .= self::$_tabPlaceholder;
 							}
 							
 							if (isset($row['w:t'][0]['#text'])){
@@ -249,7 +249,6 @@
 						} 
 					}
 				}
-
 				
 				if ($text == '') return null;
 				
@@ -262,7 +261,7 @@
 			}
 			
 			if ($type == 'table'){
-				$nodeArray = WordExtractor::_getArray($node);
+				$nodeArray = self::_getArray($node);
 				$this->_tableOpen = true;
 				
 				$columnCount = count($nodeArray['w:tblGrid'][0]['w:gridCol']);
@@ -326,9 +325,9 @@
 			if ($type == 'image'){
 				# Embed an image - images are passed as an array of 'blip' => blipNode, 'rect' => rectNode
 				if (isset($node['blip'])){
-					$blipArr = WordExtractor::_getArray($node['blip']);
+					$blipArr = self::_getArray($node['blip']);
 					$imageToUseId = $blipArr['a:blip'][0]['r:embed'];
-					$imageData = WordExtractor::_array_complex_search($this->_images, 'id', $imageToUseId);
+					$imageData = self::_array_complex_search($this->_images, 'id', $imageToUseId);
 					
 					if (!is_array($imageData)) return null;
 					
@@ -338,7 +337,7 @@
 					
 					# Load the rect if available to load the image dimensions
 					if (isset($node['rect'])){
-						$rectData = WordExtractor::_getArray($node['rect']);
+						$rectData = self::_getArray($node['rect']);
 						if (isset($rectData['style'])){
 							$imageStyles = $rectData['style'];
 							$imageStyleArray = explode(";", $imageStyles);
@@ -375,7 +374,7 @@
 		protected function _parseText($text){
 			
 			$text = htmlentities($text, ENT_QUOTES, $this->encodingCaps);
-			$text = str_replace(WordExtractor::$_tabPlaceholder, "<span class=\"tab_placeholder\"></span>", $text);
+			$text = str_replace(self::$_tabPlaceholder, "<span class=\"tab_placeholder\"></span>", $text);
 			$processedText = nl2br($text);
 			
 			return $processedText;
@@ -438,7 +437,7 @@
 				} else {
 					foreach ($node->childNodes as $childNode){
 						if ($childNode->nodeType != XML_TEXT_NODE)	{
-							$array[$childNode->nodeName][] = WordExtractor::_getArray($childNode);
+							$array[$childNode->nodeName][] = self::_getArray($childNode);
 						}
 					}
 				}
@@ -463,7 +462,7 @@
 					$results[] = $array;
 		
 				foreach ($array as $subarray)
-					$results = array_merge($results, WordExtractor::_array_complex_search($subarray, $key, $value));
+					$results = array_merge($results, self::_array_complex_search($subarray, $key, $value));
 			}
 			return $results;
 		}

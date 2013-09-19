@@ -45,8 +45,8 @@
 							if ($node['style'] == '')
 								$html .= '<p>' . $node['text'] . '</p>' . PHP_EOL;
 							else {
-								if (isset(WordRender::$_styles[$node['style']])){
-									$styleData = WordRender::$_styles[$node['style']];
+								if (isset(self::$_styles[$node['style']])){
+									$styleData = self::$_styles[$node['style']];
 									if ($styleData['tag'] == null) continue;
 									$classStr = '';
 									if (isset($styleData['class'])){
