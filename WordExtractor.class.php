@@ -12,6 +12,8 @@
 		protected $_lastPTag = 0;
 		protected $_images = array();
 		protected static $_tabPlaceholder = "{[_EXTRACT_TAB_PLACEHOLDER]}";
+		protected static $_boldPlaceholder = array('{[_BOLD_OPEN_PLACEHOLDER]}', '{[_BOLD_CLOSE_PLACEHOLDER]}');
+		protected static $_emphasizePlaceholder = array('{[_EMPHASIZE_OPEN_PLACEHOLDER]}', '{[_EMPHASIZE_CLOSE_PLACEHOLDER]}');
 		
 		/**
 		 * @name encoding
@@ -67,6 +69,10 @@
 				
 				if (strpos($entryName, 'word/media') !== false){
 					$imageName = substr($entryName, 11);
+					
+					# Check to prevent 'emf' file extensions passing. emf files are used by word rather than being added into the document by hand 
+					# ~ and can corrupt renderers that do not expect these hidden images.
+					if (substr($imageName, -3) == 'emf') continue;
 					$imageData[$imageName] = array('h' => 'auto', 'w' => 'auto', 'title' => $imageName, 'id' => null, 'data' => base64_encode(zip_entry_read($zip_entry, zip_entry_filesize($zip_entry))));
 				}
 				
@@ -332,6 +338,8 @@
 					if (!is_array($imageData)) return null;
 					
 					# Defaults are initally set as 'auto'
+					if (!isset($imageData[0]['w'])) return null;
+					
 					$w = $imageData[0]['w'];
 					$h = $imageData[0]['h'];
 					
