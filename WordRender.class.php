@@ -1,10 +1,10 @@
 <?php 
 	/**
-	 * 
-	 * @author Phil Gale
-	 * @desc This class adds rendering functionality to the WordExtractor object
-	 *
-	 */
+	*
+	* @author Phil Gale
+	* @desc This class adds rendering functionality to the WordExtractor object
+	*
+	*/
 	class WordRender extends WordExtractor {
 		
 		/**
@@ -32,6 +32,7 @@
 		 */
 		public function toHtml(){
 			$html = '';
+			$currentIndent = 0;
 			foreach ($this->parsed as $i => $node){
 				switch ($node['type']){
 					case 'p':
@@ -55,10 +56,42 @@
 								} else {
 									$html .= '<p>' . $node['text'] . '</p>' . PHP_EOL;
 									$this->unknownStyles[] = $node['style'];
-									# die('fatal error: ' . $node['style'] . ' style not found within WordRender::_styles');
 								}
 							}
 						}
+					break;
+					case 'list_item':
+						$newIndent = $node['indent'];
+						
+						# Get the last element, if it wasnt a list item, start the root ul tag
+						if (isset($this->parsed[$i - 1])){
+							if ($this->parsed[$i - 1]['type'] != 'list_item'){
+								$html .= '<ul>';
+							}
+						}
+						
+						if ($newIndent > $currentIndent){
+							for ($x = $currentIndent; $x < $newIndent; $x++){
+								$html .= '<ul>';
+							}
+							$html .= '<li>' . $node['text'] . '</li>';
+						} elseif ($newIndent == $currentIndent){
+							$html .= '<li>' . $node['text'] . '</li>';
+						} else {
+							for ($x = $newIndent; $x < $currentIndent; $x++){
+								$html .= '</ul>';
+							}
+						}
+						
+						# Get the next element, if it isnt a list item end the root ul tag
+						if (isset($this->parsed[$i + 1])){
+							if ($this->parsed[$i + 1]['type'] != 'list_item'){
+								$html .= '</ul>';
+							}
+						}
+						
+						$currentIndent = $newIndent;
+						
 					break;
 					case 'image':
 						$imageInfo = explode(".", $node['name']);

@@ -193,8 +193,6 @@
 		 * @return NULL|multitype:string
 		 */
 		protected function _parseNode($node, $type){
-			static $listIndentLevel = 0;
-			
 			if ($type == 'p'){
 				$nodeArray = WordExtractor::_getArray($node);
 				$text = '';
@@ -229,41 +227,26 @@
 					$nodeStyle = $nodeArray['w:pPr'];
 					if (is_array($nodeStyle)){
 						
-						if (isset($nodeStyle[0]['w:numPr'][0])){
-							# We want this index to start from 1, so no indent can be thought of as '0', ilvl indentation starts at 0, so we + 1 to it.
-							if (isset($nodeStyle[0]['w:numPr'][0]['w:ilvl'][0]['w:val']))
-								$indent = $nodeStyle[0]['w:numPr'][0]['w:ilvl'][0]['w:val'] + 1;
-							else
-								$indent = 1;
-							
-							if ($listIndentLevel < $indent){
-								$openUlText = '';
-								for ($x = $listIndentLevel; $x < $indent; $x++)
-									$openUlText .= '<ul>';
-								
-								$text = $openUlText . '<li>' . $text;
-								
-							} elseif ($listIndentLevel == $indent) {
-								$text = '<li>' . $text;
-							} else {
-								$closeUlText = '';
-								for ($x = $listIndentLevel; $x > $indent; $x--)
-									$closeUlText .= '</ul>';
-								
-								$text = $closeUlText . '<li>' . $text;
-							}
-							$text .= '</li>';
-							$listIndentLevel = $indent;
-						} else {
-							for ($x = $listIndentLevel; $x > 0; $x--){
-								$listIndentLevel--;
-								$this->parsed[$this->_lastPTag]['text'] .= '</ul>';
-							}
-						}
-						
 						if (isset($nodeStyle[0]['w:pStyle'][0]['w:val'])){
 							$style = $nodeStyle[0]['w:pStyle'][0]['w:val'];
 						}
+						
+						if (isset($nodeStyle[0]['w:numPr'][0])){
+							# No indentation is 0 (eg. <ul><li>list item</li></ul> - the list item in this case would be 0 indent)
+							if (isset($nodeStyle[0]['w:numPr'][0]['w:ilvl'][0]['w:val']))
+								$indent = $nodeStyle[0]['w:numPr'][0]['w:ilvl'][0]['w:val'] ;
+							else
+								$indent = 0;
+							
+							$parsedNode = array(
+								'type' => 'list_item',
+								'style'=> $style,
+								'text' => $text,
+								'indent' => $indent
+							);
+							
+							return $parsedNode;
+						} 
 					}
 				}
 
@@ -271,7 +254,7 @@
 				if ($text == '') return null;
 				
 				$parsedNode = array(
-					'text' => $this->_parseLists($text),
+					'text' => $this->_parseInlineLists($text),
 					'type' => 'p',
 					'style' => $style
 				);
@@ -322,7 +305,7 @@
 							$cellText = $this->_parseText($cellText);
 							
 							$row[$counter][] = array(
-								'text' => $this->_parseLists($cellText),
+								'text' => $this->_parseInlineLists($cellText),
 								'colspan' => 1,
 							);
 						}
@@ -331,7 +314,7 @@
 						
 						# Row has single col
 						$row[$counter]['colspan'] = $rowCount;
-						$row[$counter]['text'] = $this->_parseLists($this->_parseText($tableRow['w:tc']));
+						$row[$counter]['text'] = $this->_parseInlineLists($this->_parseText($tableRow['w:tc']));
 					}
 					
 					$parsedNode['rows'][] = $row;
@@ -390,6 +373,7 @@
 		 * @return string $processedText
 		 */
 		protected function _parseText($text){
+			
 			$text = htmlentities($text, ENT_QUOTES, $this->encodingCaps);
 			$text = str_replace(WordExtractor::$_tabPlaceholder, "<span class=\"tab_placeholder\"></span>", $text);
 			$processedText = nl2br($text);
@@ -398,12 +382,12 @@
 		}
 		
 		/**
-		 * @name _parseLists
+		 * @name _parseInlineLists
 		 * @desc Parses plaintext for any inline lists (matches against &bull;)
 		 * @param string $text
-		 * @return string $processedText 
+		 * @return string $text 
 		 */
-		protected function _parseLists($text){
+		protected function _parseInlineLists($text){
 			static $ulOpen = false;
 			$processedText = '';
 			
@@ -432,7 +416,7 @@
 			}
 			
 			return $processedText;
-		}	
+		}
 		
 		/**
 		 * @name _getArray
