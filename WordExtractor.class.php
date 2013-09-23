@@ -13,7 +13,8 @@
 		protected $_images = array();
 		protected static $_tabPlaceholder = "{[_EXTRACT_TAB_PLACEHOLDER]}";
 		protected static $_boldPlaceholder = array('{[_BOLD_OPEN_PLACEHOLDER]}', '{[_BOLD_CLOSE_PLACEHOLDER]}');
-		protected static $_emphasizePlaceholder = array('{[_EMPHASIZE_OPEN_PLACEHOLDER]}', '{[_EMPHASIZE_CLOSE_PLACEHOLDER]}');
+		protected static $_italicsPlaceholder = array('{[_EMPHASIZE_OPEN_PLACEHOLDER]}', '{[_EMPHASIZE_CLOSE_PLACEHOLDER]}');
+		protected static $_underlinePlaceholder = array('{[_UNDERLINE_OPEN_PLACEHOLDER]}', '{[_UNDERLINE_CLOSE_PLACEHOLDER]}');
 		
 		/**
 		 * @name encoding
@@ -28,6 +29,14 @@
 		 * @desc Used to set the encoding on htmlentities() functions, by default to set uppercase version of $encoding
 		 */
 		public $encodingCaps = '';
+		
+		/**
+		 * @name convertPlaceholders
+		 * @desc Set to TRUE to convert all {[*_PLACEHOLDER]} tokens to html strings using _parseText(), or FALSE to keep the tokenised strings
+		 * @var boolean - defaults to TRUE
+		 * 
+		 */
+		public $convertPlaceholders = true;
 		
 		/**
 		 * @name __construct()
@@ -199,9 +208,14 @@
 		 * @return NULL|multitype:string
 		 */
 		protected function _parseNode($node, $type){
+			$inlineBoldFlag = false;
+			$inlineUnderlineFlag = false;
+			$inlineItalicsFlag = false;
+			
 			if ($type == 'p'){
 				$nodeArray = self::_getArray($node);
 				$text = '';
+
 				if (isset($nodeArray['w:r'])){
 					if ($this->_skipCountP > 0){
 						$this->_skipCountP--;
@@ -209,16 +223,38 @@
 					}
 					if (is_array($nodeArray['w:r'])){
 						foreach ($nodeArray['w:r'] as $i => $row){
+							$textAppend = '';
+							$textPrepend = '';
+							
+							# Bold
+							if (isset($row['w:rPr'][0]['w:b'])){
+								$textPrepend .= self::$_boldPlaceholder[0];
+								$textAppend = self::$_boldPlaceholder[1] . $textAppend;
+							}
+							
+							# Italics
+							if (isset($row['w:rPr'][0]['w:i'])){
+								$textPrepend .= self::$_italicsPlaceholder[0];
+								$textAppend = self::$_italicsPlaceholder[1] . $textAppend;
+							}
+							
+							# Underlines
+							if (isset($row['w:rPr'][0]['w:u'])){
+								$textPrepend .= self::$_underlinePlaceholder[0];
+								$textAppend = self::$_underlinePlaceholder[1] . $textAppend;
+							}
+							
+							# Tabs
 							if (isset($row['w:tab'])){
 								$text .= self::$_tabPlaceholder;
 							}
 							
 							if (isset($row['w:t'][0]['#text'])){
-								$text .= $row['w:t'][0]['#text'];
+								$text .= $textPrepend . $row['w:t'][0]['#text'] . $textAppend;
 							} else {
 								if (isset($row['w:t'])){
 									if (!is_array($row['w:t'])){
-										$text .= $row['w:t'];
+										$text .= $textPrepend . $row['w:t'] . $textAppend;
 									}
 								}
 							}
@@ -238,7 +274,6 @@
 						}
 						
 						if (isset($nodeStyle[0]['w:numPr'][0])){
-							# No indentation is 0 (eg. <ul><li>list item</li></ul> - the list item in this case would be 0 indent)
 							if (isset($nodeStyle[0]['w:numPr'][0]['w:ilvl'][0]['w:val']))
 								$indent = $nodeStyle[0]['w:numPr'][0]['w:ilvl'][0]['w:val'] ;
 							else
@@ -380,9 +415,14 @@
 		 * @return string $processedText
 		 */
 		protected function _parseText($text){
-			
 			$text = htmlentities($text, ENT_QUOTES, $this->encodingCaps);
-			$text = str_replace(self::$_tabPlaceholder, "<span class=\"tab_placeholder\"></span>", $text);
+			if ($this->convertPlaceholders){
+				$text = str_replace(self::$_tabPlaceholder, '<span class="tab_placeholder"></span>', $text);
+				$text = str_replace(self::$_italicsPlaceholder, array('<i>', '</i>'), $text);
+				$text = str_replace(self::$_boldPlaceholder, array('<b>', '</b>'), $text);
+				$text = str_replace(self::$_underlinePlaceholder, array('<span class="underline">', '</span>') , $text);
+			}
+			
 			$processedText = nl2br($text);
 			
 			return $processedText;
@@ -400,7 +440,6 @@
 			
 			$textChunks = explode("&bull;", $text);
 			$count = count($textChunks);
-			
 			if ($count == 1 && strpos($text, "&bull;") !== false){
 				if (!$ulOpen){
 					$ulOpen = true;
@@ -410,6 +449,14 @@
 			} elseif ($count > 1) {
 				$processedText = '<ul>';
 				foreach ($textChunks as $i => $listItem){
+					if ($this->convertPlaceholders){
+						if ($listItem == '<b>') continue;
+						if (substr($listItem, 0, 4) == '</b>') $listItem = substr($listItem, 4);
+					} else {
+						if ($listItem == self::$_boldPlaceholder[0]) continue;
+						$placeholderLength = strlen(self::$_boldPlaceholder[1]);
+						if (substr($listItem, 0, $placeholderLength) == self::$_boldPlaceholder[1]) $listItem = substr($listItem, $placeholderLength);
+					}
 					if (strlen(trim($listItem)) == 0) continue;
 					$processedText .= '<li>' . $listItem . '</li>';
 				}

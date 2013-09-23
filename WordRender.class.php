@@ -32,6 +32,7 @@
 		 */
 		public function toHtml(){
 			$htmlArray = array();
+			$activeIndentation = 0;
 			$listItems = array();
 			foreach ($this->parsed as $i => $node){
 				$html = '';
@@ -63,25 +64,30 @@
 						$htmlArray[$i] = $html;
 					break;
 					case 'list_item':
-						if (!isset($activeIndentation))
-							$activeIndentation = $node['indent'];
-						else {
-							if ($activeIndentation < $node['indent']){
-								$indentI = 0;
-								for ($loopI = $activeIndentation; $loopI < $node['indent']; $loopI++ ){
-									$indentI++;
-								}
-								if (isset($listItems[$i - 1]))
-									$listItems[$i - 1]['open_ul_count'] = $indentI;
-							} else {
-								$indentI = 0;
-								for ($loopI = $activeIndentation; $loopI > $node['indent']; $loopI-- ){
-									$indentI++;
-								}
-								$node['close_ul_count'] = $indentI;
+						if (isset($this->parsed[$i - 1])){
+							if ($this->parsed[$i - 1]['type'] != 'list_item'){
+								$activeIndentation = -1;
 							}
 						}
 						
+						if ($activeIndentation < $node['indent']){
+							# Indent increasing - create new ul branch
+							$indentI = 0;
+							for ($loopI = $activeIndentation; $loopI < $node['indent']; $loopI++ ){
+								$indentI++;
+							}
+							if (isset($listItems[$i - 1]))
+								$listItems[$i - 1]['open_ul_count'] = $indentI;
+						} else if ($activeIndentation > $node['indent']){
+							# Close ul branch
+							$indentI = 0;
+							for ($loopI = $activeIndentation; $loopI > $node['indent']; $loopI-- ){
+								$indentI++;
+							}
+							$node['close_ul_count'] = $indentI;
+						}
+						
+						# If there are no more list items after this branch, we want to close the ul completly
 						$calcClosingTags = false;
 						
 						if (isset($this->parsed[$i + 1])){
@@ -91,13 +97,13 @@
 						} else $calcClosingTags = true;
 						
 						if ($calcClosingTags){
+							$activeIndentation = 0;
 							if ($node['indent'] != 0){
 								$node['lastClosingTags'] = $node['indent'] + 1;
 							} else $node['lastClosingTags'] = 1;
-						}
+						} else $activeIndentation = $node['indent'];
 						
-						$listItems[$i] = $node;
-						$activeIndentation = $node['indent'];
+						$listItems[$i] = $node;						
 					break;
 					case 'image':
 						$imageInfo = explode(".", $node['name']);
@@ -160,18 +166,31 @@
 			foreach ($this->listItems as $key => $listItem){
 				$html = '';
 				
-				if (!isset($this->listItems[$key - 1])) $html .= '<ul>';
-				
-				if (isset($listItem['close_ul_count'])){
-					for ($i = 0; $i < $listItem['close_ul_count']; $i++){
-						$html .= '</ul></li>';
-				
+				# If there were no list items immedeatly before this one, we are starting a new list
+				if (!isset($this->listItems[$key - 1])){
+					$html .= '<ul>';
+					# handle the edge case of starting with an indentation
+					if ($listItem['indent'] > 0){
+						for ($i = 0; $i < $listItem['indent']; $i++){
+							$html .= '<li><ul>';
+						}
 					}
 				}
 				
-				$html .= '<li>' . $listItem['text'] ;
+				# If the are any additional tags set to be closed we do it here
+				if (isset($listItem['close_ul_count'])){
+					for ($i = 0; $i < $listItem['close_ul_count']; $i++){
+						$html .= '</ul></li>';
+					}
+				}
+								
+				# Apply the li text
+				$html .= '<li>' . $listItem['text'];
+				
+				# After the text, we either want to open a new ul or close the current li
 				if (isset($listItem['open_ul_count'])) $html .= '<ul>'; else $html .= '</li>';
 				
+				# Apply the closing tags
 				if (isset($listItem['lastClosingTags'])){
 					for ($i = 0; $i < $listItem['lastClosingTags']; $i++){
 						$html .= '</ul>';
@@ -180,6 +199,7 @@
 						}
 					}
 				}
+				
 				$this->html[$key] = $html;
 			}
 		}
