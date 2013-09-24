@@ -325,6 +325,27 @@
 				}
 								
 				$text = $this->_parseText($text);
+				
+				# List processing
+				$listResQuery = $this->_xPath->query("w:pPr/w:numPr", $node);
+				$listArray = array();
+				foreach ($listResQuery as $listResult){
+					$listArray = self::_getArray($listResult);
+				}
+				if (!empty($listArray)){
+					$indent = 0;
+					if (isset($listArray['w:ilvl'][0]['w:val'])){
+						$indent = $listArray['w:ilvl'][0]['w:val'];
+					}
+					$parsedNode = array(
+						'type' => 'list_item',
+						'style' => $this->_curStyle,
+						'text' => $text,
+						'indent' => $indent,
+					);
+					return $parsedNode;
+				}
+				
 				$style = $this->_curStyle;
 				
 				if ($text == '') return null;
