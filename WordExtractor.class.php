@@ -12,10 +12,12 @@
 		protected $_lastPTag = 0;
 		protected $_images = array();
 		protected $_curStyle = '';
+		protected $_xPath = null;
 		protected static $_tabPlaceholder = "{[_EXTRACT_TAB_PLACEHOLDER]}";
 		protected static $_boldPlaceholder = array('{[_BOLD_OPEN_PLACEHOLDER]}', '{[_BOLD_CLOSE_PLACEHOLDER]}');
 		protected static $_italicsPlaceholder = array('{[_EMPHASIZE_OPEN_PLACEHOLDER]}', '{[_EMPHASIZE_CLOSE_PLACEHOLDER]}');
 		protected static $_underlinePlaceholder = array('{[_UNDERLINE_OPEN_PLACEHOLDER]}', '{[_UNDERLINE_CLOSE_PLACEHOLDER]}');
+		protected static $_hrefPlaceholder = array('{[_HREF_OPEN_PLACEHOLDER]}', '{[_HREF_MID_PLACEHOLDER]}' , '{[_HREF_CLOSE_PLACEHOLDER]}');
 		
 		/**
 		 * @name encoding
@@ -136,12 +138,11 @@
 		/**
 		 * @name _parseNodeStyle
 		 * @desc Takes a node and returns the nodes set style
-		 * @param xPath $xPath
 		 * @param domObject $node
 		 * @return string $style - returns '' if no style is found
 		 */
-		protected function _parseNodeStyle($xPath, $node){
-			$styleQuery = $xPath->query("w:pPr/w:pStyle", $node);
+		protected function _parseNodeStyle($node){
+			$styleQuery = $this->_xPath->query("w:pPr/w:pStyle", $node);
 			$style = '';
 			foreach ($styleQuery as $styleResult){
 				$styleArray = self::_getArray($styleResult);
@@ -171,6 +172,7 @@
 			$xPath->registerNamespace('a', "http://schemas.openxmlformats.org/drawingml/2006/main");
 			$xPath->registerNamespace('pic', "http://schemas.openxmlformats.org/drawingml/2006/picture");
 			$xPath->registerNamespace('v', "urn:schemas-microsoft-com:vml");
+			$this->_xPath = $xPath;
 			
 			# This stage gets the appropriate node[s] from the document, and passes it into the _parseNode() method
 			foreach ($elements as $node) {
@@ -179,7 +181,7 @@
 					# Paragraph parsing
 					case 'w:p':
 						if (!$this->_tableOpen){
-							$this->_curStyle = $this->_parseNodeStyle($xPath, $node);
+							$this->_curStyle = $this->_parseNodeStyle($node);
 							$parsedArr = $this->_parseNode($node, 'p');
 							if ($parsedArr != null){
 								$this->parsed[] = $parsedArr;
@@ -229,6 +231,52 @@
 		}
 		
 		/**
+		 * @name _parseWR
+		 * @desc Converts a WR object into text
+		 * @param domobject $wrObject
+		 * @param string $textPrepend
+		 * @param string $textAppend
+		 * @return string $text
+		 */
+		protected function _parseWR($wrObject, $textPrepend = '', $textAppend = ''){
+			$row = self::_getArray($wrObject);
+			$text = '';
+			# Bold
+			if (isset($row['w:rPr'][0]['w:b'])){
+				$textPrepend .= self::$_boldPlaceholder[0];
+				$textAppend = self::$_boldPlaceholder[1] . $textAppend;
+			}
+				
+			# Italics
+			if (isset($row['w:rPr'][0]['w:i'])){
+				$textPrepend .= self::$_italicsPlaceholder[0];
+				$textAppend = self::$_italicsPlaceholder[1] . $textAppend;
+			}
+				
+			# Underlines
+			if (isset($row['w:rPr'][0]['w:u'])){
+				$textPrepend .= self::$_underlinePlaceholder[0];
+				$textAppend = self::$_underlinePlaceholder[1] . $textAppend;
+			}
+				
+			# Tabs
+			if (isset($row['w:tab'])){
+				$text .= self::$_tabPlaceholder;
+			}
+				
+			if (isset($row['w:t'][0]['#text'])){
+				$text .= $textPrepend . $row['w:t'][0]['#text'] . $textAppend;
+			} else {
+				if (isset($row['w:t'])){
+					if (!is_array($row['w:t'])){
+						$text .= $textPrepend . $row['w:t'] . $textAppend;
+					}
+				}
+			}
+			return $text;
+		}
+		
+		/**
 		 * @name _parseNode
 		 * @desc Retrives the data from a given '*' node from the xml
 		 * @param domobject $node
@@ -242,55 +290,42 @@
 			$wordStyleOverride = null;
 			
 			if ($type == 'p'){
-				$nodeArray = self::_getArray($node);
 				$text = '';
-								
-				if (isset($nodeArray['w:r'])){
-					if ($this->_skipCountP > 0){
-						$this->_skipCountP--;
-						return null;
-					}
-					if (is_array($nodeArray['w:r'])){
-						foreach ($nodeArray['w:r'] as $i => $row){
-							$textAppend = '';
-							$textPrepend = '';
-							
-							# Bold
-							if (isset($row['w:rPr'][0]['w:b'])){
-								$textPrepend .= self::$_boldPlaceholder[0];
-								$textAppend = self::$_boldPlaceholder[1] . $textAppend;
+				$nodeHasRow = false;
+				
+				foreach ($node->childNodes as $child){
+					if ($child->nodeName == 'w:r' || $child->nodeName == 'w:hyperlink'){
+						if ($nodeHasRow == false){
+							if ($this->_skipCountP > 0){
+								$this->_skipCountP--;
+								return null;
 							}
-							
-							# Italics
-							if (isset($row['w:rPr'][0]['w:i'])){
-								$textPrepend .= self::$_italicsPlaceholder[0];
-								$textAppend = self::$_italicsPlaceholder[1] . $textAppend;
-							}
-							
-							# Underlines
-							if (isset($row['w:rPr'][0]['w:u'])){
-								$textPrepend .= self::$_underlinePlaceholder[0];
-								$textAppend = self::$_underlinePlaceholder[1] . $textAppend;
-							}
-							
-							# Tabs
-							if (isset($row['w:tab'])){
-								$text .= self::$_tabPlaceholder;
-							}
-							
-							if (isset($row['w:t'][0]['#text'])){
-								$text .= $textPrepend . $row['w:t'][0]['#text'] . $textAppend;
-							} else {
-								if (isset($row['w:t'])){
-									if (!is_array($row['w:t'])){
-										$text .= $textPrepend . $row['w:t'] . $textAppend;
-									}
-								}
-							}
+							$nodeHasRow = true;
 						}
 					}
+					
+					# standard text handler
+					if ($child->nodeName == 'w:r'){
+						$text .= $this->_parseWR($child);
+					}
+					
+					# link handler
+					if ($child->nodeName == 'w:hyperlink'){
+						$hyperlinkQuery = $this->_xPath->query("w:r/w:t", $child);
+						$hyperlink = '';
+						foreach ($hyperlinkQuery as $hyperlinkRes){
+							$hyperlink = $hyperlinkRes->nodeValue;
+							$rowObj = $hyperlinkRes->parentNode;
+						}
+						
+						if ($hyperlink != ''){
+							if (substr($hyperlink, 0, 4) != 'http') $hyperlink = 'http://' . $hyperlink;
+							$text .= $this->_parseWR($rowObj, self::$_hrefPlaceholder[0] . $hyperlink . self::$_hrefPlaceholder[1], self::$_hrefPlaceholder[2]);
+						}
+						
+					}
 				}
-				
+								
 				$text = $this->_parseText($text);
 				$style = $this->_curStyle;
 				
@@ -424,6 +459,8 @@
 				$text = str_replace(self::$_italicsPlaceholder, array('<i>', '</i>'), $text);
 				$text = str_replace(self::$_boldPlaceholder, array('<b>', '</b>'), $text);
 				$text = str_replace(self::$_underlinePlaceholder, array('<span class="underline">', '</span>') , $text);
+				
+				$text = str_replace(self::$_hrefPlaceholder, array('<a href="', '">', '</a>'), $text);
 			}
 			
 			$processedText = nl2br($text);
