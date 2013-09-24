@@ -502,11 +502,11 @@
 			if ($count == 1 && strpos($text, "&bull;") !== false){
 				if (!$ulOpen){
 					$ulOpen = true;
-					$processedText = '<ul>';
+					$processedText = '<ul class="inline_list">';
 				}
 				$processedText .= '<li>' . substr($text, 6) . '</li>';
 			} elseif ($count > 1) {
-				$processedText = '<ul>';
+				$processedText = '<ul class="inline_list">';
 				foreach ($textChunks as $i => $listItem){
 					if ($this->convertPlaceholders){
 						if ($listItem == '<b>') continue;
