@@ -202,6 +202,7 @@
 				
 				$this->html[$key] = $html;
 			}
+			ksort($this->html);
 		}
 		
 		/**
@@ -210,7 +211,6 @@
 		 */
 		public function render(){
 			$this->_renderLists();
-			ksort($this->html);
 			
 			$html = '';
 			foreach ($this->html as $i => $htmlstring){

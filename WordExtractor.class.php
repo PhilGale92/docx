@@ -11,6 +11,7 @@
 		protected $_imageMatching = '';
 		protected $_lastPTag = 0;
 		protected $_images = array();
+		protected $_curStyle = '';
 		protected static $_tabPlaceholder = "{[_EXTRACT_TAB_PLACEHOLDER]}";
 		protected static $_boldPlaceholder = array('{[_BOLD_OPEN_PLACEHOLDER]}', '{[_BOLD_CLOSE_PLACEHOLDER]}');
 		protected static $_italicsPlaceholder = array('{[_EMPHASIZE_OPEN_PLACEHOLDER]}', '{[_EMPHASIZE_CLOSE_PLACEHOLDER]}');
@@ -66,6 +67,7 @@
 		protected function _getXmlDump(){
 			$content = '';
 			$imageMatching = '';
+			$styles = '';
 			
 			$zip = zip_open($this->wordUri);
 			if (!$zip || is_numeric($zip)) return false;
@@ -76,6 +78,7 @@
 				
 				if (zip_entry_open($zip, $zip_entry) == FALSE) continue;
 				
+				# /media/ contains all included images
 				if (strpos($entryName, 'word/media') !== false){
 					$imageName = substr($entryName, 11);
 					
@@ -85,17 +88,20 @@
 					$imageData[$imageName] = array('h' => 'auto', 'w' => 'auto', 'title' => $imageName, 'id' => null, 'data' => base64_encode(zip_entry_read($zip_entry, zip_entry_filesize($zip_entry))));
 				}
 				
+				# document.xml.refs supplies relationships of Id's to image url's
 				if ($entryName == 'word/_rels/document.xml.rels'){
 					$imageMatching = zip_entry_read($zip_entry, zip_entry_filesize($zip_entry));
 				}
 				
+				# document.xml contains all the content & structure of the file
 				if ($entryName == "word/document.xml"){
 					$content = zip_entry_read($zip_entry, zip_entry_filesize($zip_entry));
 				}
-			
+				
 				zip_entry_close($zip_entry);
 			}
 			zip_close($zip);
+			$this->_stylesDump = $styles;
 			$this->_images = $imageData;
 			$this->_rawXml = $content;
 			$this->_imageMatching = $imageMatching;
@@ -128,6 +134,26 @@
 		}
 		
 		/**
+		 * @name _parseNodeStyle
+		 * @desc Takes a node and returns the nodes set style
+		 * @param xPath $xPath
+		 * @param domObject $node
+		 * @return string $style - returns '' if no style is found
+		 */
+		protected function _parseNodeStyle($xPath, $node){
+			$styleQuery = $xPath->query("w:pPr/w:pStyle", $node);
+			$style = '';
+			foreach ($styleQuery as $styleResult){
+				$styleArray = self::_getArray($styleResult);
+				if (isset($styleArray['w:val'])){
+					$style = $styleArray['w:val'];
+					break;
+				}
+			}
+			return $style;
+		}
+		
+		/**
 		 * @name _parseXml
 		 * @desc Converts the raw XML string into an array of nodes of either text (with styles attached), tables or images
 		 */
@@ -149,9 +175,11 @@
 			# This stage gets the appropriate node[s] from the document, and passes it into the _parseNode() method
 			foreach ($elements as $node) {
 				switch ($node->nodeName){
+					
 					# Paragraph parsing
 					case 'w:p':
 						if (!$this->_tableOpen){
+							$this->_curStyle = $this->_parseNodeStyle($xPath, $node);
 							$parsedArr = $this->_parseNode($node, 'p');
 							if ($parsedArr != null){
 								$this->parsed[] = $parsedArr;
@@ -211,11 +239,12 @@
 			$inlineBoldFlag = false;
 			$inlineUnderlineFlag = false;
 			$inlineItalicsFlag = false;
+			$wordStyleOverride = null;
 			
 			if ($type == 'p'){
 				$nodeArray = self::_getArray($node);
 				$text = '';
-
+								
 				if (isset($nodeArray['w:r'])){
 					if ($this->_skipCountP > 0){
 						$this->_skipCountP--;
@@ -263,33 +292,7 @@
 				}
 				
 				$text = $this->_parseText($text);
-				
-				$style = '';
-				if (isset($nodeArray['w:pPr'])){
-					$nodeStyle = $nodeArray['w:pPr'];
-					if (is_array($nodeStyle)){
-						
-						if (isset($nodeStyle[0]['w:pStyle'][0]['w:val'])){
-							$style = $nodeStyle[0]['w:pStyle'][0]['w:val'];
-						}
-						
-						if (isset($nodeStyle[0]['w:numPr'][0])){
-							if (isset($nodeStyle[0]['w:numPr'][0]['w:ilvl'][0]['w:val']))
-								$indent = $nodeStyle[0]['w:numPr'][0]['w:ilvl'][0]['w:val'] ;
-							else
-								$indent = 0;
-							
-							$parsedNode = array(
-								'type' => 'list_item',
-								'style'=> $style,
-								'text' => $text,
-								'indent' => $indent
-							);
-							
-							return $parsedNode;
-						} 
-					}
-				}
+				$style = $this->_curStyle;
 				
 				if ($text == '') return null;
 				
