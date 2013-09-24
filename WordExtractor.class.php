@@ -69,7 +69,6 @@
 		protected function _getXmlDump(){
 			$content = '';
 			$imageMatching = '';
-			$styles = '';
 			
 			$zip = zip_open($this->wordUri);
 			if (!$zip || is_numeric($zip)) return false;
@@ -103,7 +102,6 @@
 				zip_entry_close($zip_entry);
 			}
 			zip_close($zip);
-			$this->_stylesDump = $styles;
 			$this->_images = $imageData;
 			$this->_rawXml = $content;
 			$this->_imageMatching = $imageMatching;
@@ -365,7 +363,6 @@
 					
 
 					# Row has multiple columns
-					#@todo - append a ' ' at the end of celltext if there is more than one entry
 					if (is_array($tableRow['w:tc'])){
 						foreach ($tableRow['w:tc'] as $ii => $tableCell){
 							
@@ -394,7 +391,7 @@
 						$this->_skipCountP += $rowCount;
 						
 						# Row has single col
-						$row[$counter]['colspan'] = $rowCount;
+						$row[$counter]['colspan'] = $columnCount;
 						$row[$counter]['text'] = $this->_parseInlineLists($this->_parseText($tableRow['w:tc']));
 					}
 					$parsedNode['rows'][] = $row;
