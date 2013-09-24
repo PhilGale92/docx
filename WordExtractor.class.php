@@ -365,22 +365,25 @@
 					
 
 					# Row has multiple columns
+					#@todo - append a ' ' at the end of celltext if there is more than one entry
 					if (is_array($tableRow['w:tc'])){
 						foreach ($tableRow['w:tc'] as $ii => $tableCell){
 							
 							$cellText = '';
 							if (isset($tableCell['w:p'][0]['w:r'])){
-								
-								foreach ($tableCell['w:p'][0]['w:r'] as $iii => $tableCellRow){
-									$this->_skipCountP++;
-									
-									if (isset($tableCellRow['w:t'][0]['#text'])){
-										$cellText .= $tableCellRow['w:t'][0]['#text'];
+								foreach ($tableCell['w:p'] as $tableRow){
+									if (isset($tableRow['w:r'])){
+										$this->_skipCountP++;
+										foreach ($tableRow['w:r'] as $iii => $tableCellRow){
+											if (isset($tableCellRow['w:t'][0]['#text'])){
+												$cellText .= $tableCellRow['w:t'][0]['#text'] . ' ';
+											}
+										}
 									}
 								}
 							}
 							
-							$cellText = $this->_parseText($cellText);
+							$cellText = $this->_parseText(trim($cellText));
 							
 							$row[$counter][] = array(
 								'text' => $this->_parseInlineLists($cellText),
@@ -388,16 +391,14 @@
 							);
 						}
 					} else {
-						$this->_skipCountP += $columnCount;
+						$this->_skipCountP += $rowCount;
 						
 						# Row has single col
 						$row[$counter]['colspan'] = $rowCount;
 						$row[$counter]['text'] = $this->_parseInlineLists($this->_parseText($tableRow['w:tc']));
 					}
-					
 					$parsedNode['rows'][] = $row;
 				}
-				
 				$this->_tableOpen = false;
 			}
 			
