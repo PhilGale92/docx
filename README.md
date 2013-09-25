@@ -1,17 +1,17 @@
 Docx Parser
 ====
 
-This PHP based parser takes any docx file, and creates an object containing all of its styled text, images, lists & tables.
-
-You may also choose to use the extending WordRender class to simply output this all as pure html or see how you may want to access the parsed data.
+This PHP based parser takes any docx file, and creates a PHP array containing its structure, content &amp; style information.
+An HTML rendering class is included to demonstrate how you can then manipulate the array into different formats.
 
 ====
 
-Notes:
+Caveats:
 
-- Style support is experimental (but in progress), check out the WordRender class for information.
-- Don't forget to bump up the maximum execution time, for large documents this may take a moment to run.
-- Images are sometimes stored in word files at their original resolution rather than the scaled down sizes you will see in a word document. In other words an image that may seem to be 200*200px may infact be 600*600. This parser saves the scaled down image sizes and uses them to render out the final images but I recommend that you rescale the images using PHP to save download times.
+- Images are output at their original resolution, only scaled down so you may want additional processing to resize the images
+- The parser may take some time to run on larger documents
+- Does not support textboxes as of milestone 2
+- Setting a piece of text to the same size &amp; colour as a heading style, is not the same as setting its stylename to 'header'
 
 ====
 
