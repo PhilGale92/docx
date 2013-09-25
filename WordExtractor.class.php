@@ -544,7 +544,7 @@
 			} elseif ($count > 1) {
 				$processedText = '<ul class="inline_list">';
 				foreach ($textChunks as $i => $listItem){
-					if ($this->convertPlaceholders){
+					if ($this->convertInlineHtml){
 						if ($listItem == '<b>') continue;
 						if (substr($listItem, 0, 4) == '</b>') $listItem = substr($listItem, 4);
 					} else {
