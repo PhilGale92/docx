@@ -19,6 +19,7 @@
 		move_uploaded_file($_FILES['upload_file']['tmp_name'], $destinationUri);
 		
 		$extract = new WordRender($destinationUri);
+		$extract->extract();
 		$extract->toHtml();
 		echo $extract;
 	}
