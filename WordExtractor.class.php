@@ -5,14 +5,56 @@
 	 * @name WordExtractor
 	 */
 	class WordExtractor {
-		protected $_tableOpen = false;
-		protected $_skipCountP = 0;
-		protected $_rawXml = '';
-		protected $_imageMatching = '';
-		protected $_lastPTag = 0;
-		protected $_images = array();
+		/**
+		 * @name _rawXml
+		 * @desc Stores the xml of the document structure
+		 * @var string
+		 */
+		private $_rawXml = '';
+		/**
+		 * @name _imageReference
+		 * @desc Stores the xml of the image relationships
+		 * @var string
+		 */
+		private $_imageReference = '';
+		/**
+		 * @name _curStyle
+		 * @desc Stores id of the current row style
+		 * @var string
+		 */
 		protected $_curStyle = '';
+		/**
+		 * @name _xPath
+		 * @desc Stores the xPath object
+		 * @var xPath object
+		 */
 		protected $_xPath = null;
+		/**
+		 * @name _tableOpen
+		 * @desc If set to true the table parser is currently in progress
+		 * @var boolean
+		 */
+		protected $_tableOpen = false;
+		/**
+		 * @name _skipCountP
+		 * @desc Stores the amount of P tags to skip after a table has been rendered
+		 * @var numeric
+		 */
+		protected $_skipCountP = 0;
+		/**
+		 * @name _lastPTag
+		 * @desc Stores the key of the most recent P tag to have been inserted
+		 * @var numeric
+		 */
+		protected $_lastPTag = 0;
+		/**
+		 * @name _images
+		 * @desc Stores an array of all images found in the document file
+		 * @var array
+		 */
+		protected $_images = array();
+		
+		
 		protected static $_tabPlaceholder = "{[_EXTRACT_TAB_PLACEHOLDER]}";
 		protected static $_boldPlaceholder = array('{[_BOLD_OPEN_PLACEHOLDER]}', '{[_BOLD_CLOSE_PLACEHOLDER]}');
 		protected static $_italicsPlaceholder = array('{[_EMPHASIZE_OPEN_PLACEHOLDER]}', '{[_EMPHASIZE_CLOSE_PLACEHOLDER]}');
@@ -25,41 +67,35 @@
 		 * @desc Used to set the encoding on domdocument objects
 		 */
 		public $encoding = 'utf-8';
-		
+				
 		/**
-		 * @name $encodingCaps
-		 * @var string $encodingCaps
-		 * @desc Used to set the encoding on htmlentities() functions, by default to set uppercase version of $encoding
-		 */
-		public $encodingCaps = '';
-		
-		/**
-		 * @name convertPlaceholders
+		 * @name $convertInlineHtml
 		 * @desc Set to TRUE to convert all {[*_PLACEHOLDER]} tokens to html strings using _parseText(), or FALSE to keep the tokenised strings
 		 * @var boolean - defaults to TRUE
 		 * 
 		 */
-		public $convertPlaceholders = true;
+		public $convertInlineHtml = true;
 		
-		/**
-		 * @name __construct()
-		 * @desc Pass the absolute path to the file, and optionally the files encoding in lowercase form & uppercase (for the differences between DOMDocument & htmlentities(); - eg. 'utf-8', 'UTF-8' - the default)
-		*/
-		public function __construct($fileUri, $encoding = null, $encodingCaps = null){
-			if ($encoding != null){
-				$this->encoding = $encoding;
-			}
-			if ($encodingCaps != null){
-				$this->encodingCaps = $encodingCaps;
-			} else {
-				$this->encodingCaps = strtoupper($this->encoding);
-			}
-						
+		public function __construct($fileUri){
 			$this->wordUri = $fileUri;
+			$this->encoding = 'utf-8';
+			$this->convertInlineHtml = true;
+			return $this;
+		}
+		
+		public function config($args){
+			foreach ($args as $k => $v){
+				$this->$k = $v;
+			}
+			return $this;
+		}
+		
+		public function extract(){
 			$this->_getXmlDump();
 			$this->_matchImages();
 			$this->_parseXml();
 		}
+		
 		
 		/**
 		 * @name _getXmlDump
@@ -472,8 +508,8 @@
 		 * @return string $processedText
 		 */
 		protected function _parseText($text){
-			$text = htmlentities($text, ENT_QUOTES, $this->encodingCaps);
-			if ($this->convertPlaceholders){
+			$text = htmlentities($text, ENT_QUOTES, $this->encoding);
+			if ($this->convertInlineHtml){
 				$text = str_replace(self::$_tabPlaceholder, '<span class="tab_placeholder"></span>', $text);
 				$text = str_replace(self::$_italicsPlaceholder, array('<i>', '</i>'), $text);
 				$text = str_replace(self::$_boldPlaceholder, array('<b>', '</b>'), $text);
@@ -508,7 +544,7 @@
 			} elseif ($count > 1) {
 				$processedText = '<ul class="inline_list">';
 				foreach ($textChunks as $i => $listItem){
-					if ($this->convertPlaceholders){
+					if ($this->convertInlineHtml){
 						if ($listItem == '<b>') continue;
 						if (substr($listItem, 0, 4) == '</b>') $listItem = substr($listItem, 4);
 					} else {
