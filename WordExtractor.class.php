@@ -189,7 +189,7 @@
 		
 		/**
 		 * @name _parseXml
-		 * @desc Converts the raw XML string into an array of nodes of either text (with styles attached), tables or images
+		 * @desc Converts the raw XML data into a PHP array
 		 */
 		protected function _parseXml(){
 			$dom = new \DOMDocument();
@@ -207,12 +207,14 @@
 			$xPath->registerNamespace('v', "urn:schemas-microsoft-com:vml");
 			$this->_xPath = $xPath;
 			
-			# This stage gets the appropriate node[s] from the document, and passes it into the _parseNode() method
+			# This stage gets the appropriate domelements from the document, and passes them into the _parseNode() method
 			foreach ($elements as $node) {
 				switch ($node->nodeName){
-					
 					# Paragraph parsing
 					case 'w:p':
+						# Ignore textboxes untill a reliable parser is known
+						if ($node->parentNode->nodeName == 'w:txbxContent') continue;
+						
 						if (!$this->_tableOpen){
 							$this->_curStyle = $this->_parseNodeStyle($node);
 							$parsedArr = $this->_parseNode($node, 'p');
@@ -318,11 +320,6 @@
 		 * @return NULL|multitype:string
 		 */
 		protected function _parseNode($node, $type){
-			$inlineBoldFlag = false;
-			$inlineUnderlineFlag = false;
-			$inlineItalicsFlag = false;
-			$wordStyleOverride = null;
-			
 			if ($type == 'p'){
 				$text = '';
 				$nodeHasRow = false;
@@ -420,7 +417,6 @@
 					# Row has multiple columns
 					if (is_array($tableRow['w:tc'])){
 						foreach ($tableRow['w:tc'] as $ii => $tableCell){
-							
 							$cellText = '';
 							if (isset($tableCell['w:p'][0]['w:r'])){
 								foreach ($tableCell['w:p'] as $tableRow){
@@ -465,7 +461,6 @@
 								break 2;
 							}
 						}
-						
 					}
 					
 					$imageData = self::_array_complex_search($this->_images, 'id', $imageToUseId);
@@ -497,11 +492,11 @@
 						}
 					}
 					$parsedNode = array(
-							'type' => 'image',
-							'name' => $imageData[0]['title'],
-							'h' => $h,
-							'w' => $w,
-							'data' => $imageData[0]['data']
+						'type' => 'image',
+						'name' => $imageData[0]['title'],
+						'h' => $h,
+						'w' => $w,
+						'data' => $imageData[0]['data']
 					);
 					
 				} else $parsedNode = null;
@@ -512,7 +507,7 @@
 		
 		/**
 		 * @name _parseText
-		 * @desc Parses out any html-invalid charecters from the string into html entities, before the processing gets too far along
+		 * @desc Escapes any entities from the string into html entities, and replaces the placeholders with valid html
 		 * @param string $text
 		 * @return string $processedText
 		 */
