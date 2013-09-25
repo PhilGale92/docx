@@ -179,10 +179,9 @@
 			$styleQuery = $this->_xPath->query("w:pPr/w:pStyle", $node);
 			$style = '';
 			foreach ($styleQuery as $styleResult){
-				$styleArray = self::_getArray($styleResult);
-				if (isset($styleArray['w:val'])){
-					$style = $styleArray['w:val'];
-					break;
+				foreach ($styleResult->attributes as $styleNode){
+					$style = $styleNode->nodeValue;
+					break 2;
 				}
 			}
 			return $style;
@@ -190,7 +189,7 @@
 		
 		/**
 		 * @name _parseXml
-		 * @desc Converts the raw XML string into an array of nodes of either text (with styles attached), tables or images
+		 * @desc Converts the raw XML data into a PHP array
 		 */
 		protected function _parseXml(){
 			$dom = new \DOMDocument();
@@ -208,12 +207,14 @@
 			$xPath->registerNamespace('v', "urn:schemas-microsoft-com:vml");
 			$this->_xPath = $xPath;
 			
-			# This stage gets the appropriate node[s] from the document, and passes it into the _parseNode() method
+			# This stage gets the appropriate domelements from the document, and passes them into the _parseNode() method
 			foreach ($elements as $node) {
 				switch ($node->nodeName){
-					
 					# Paragraph parsing
 					case 'w:p':
+						# Ignore textboxes untill a reliable parser is known
+						if ($node->parentNode->nodeName == 'w:txbxContent') continue;
+						
 						if (!$this->_tableOpen){
 							$this->_curStyle = $this->_parseNodeStyle($node);
 							$parsedArr = $this->_parseNode($node, 'p');
@@ -273,40 +274,41 @@
 		 * @return string $text
 		 */
 		protected function _parseWR($wrObject, $textPrepend = '', $textAppend = ''){
-			$row = self::_getArray($wrObject);
 			$text = '';
+			
 			# Bold
-			if (isset($row['w:rPr'][0]['w:b'])){
+			$boldQuery = $this->_xPath->query("w:rPr/w:b", $wrObject);
+			foreach ($boldQuery as $boldRes){
 				$textPrepend .= self::$_boldPlaceholder[0];
 				$textAppend = self::$_boldPlaceholder[1] . $textAppend;
 			}
-				
+			
 			# Italics
-			if (isset($row['w:rPr'][0]['w:i'])){
+			$italicsQuery = $this->_xPath->query("w:rPr/w:i", $wrObject);
+			foreach ($italicsQuery as $italicRes){
 				$textPrepend .= self::$_italicsPlaceholder[0];
 				$textAppend = self::$_italicsPlaceholder[1] . $textAppend;
 			}
-				
+			
 			# Underlines
-			if (isset($row['w:rPr'][0]['w:u'])){
+			$underlineQuery = $this->_xPath->query("w:rPr/w:u", $wrObject);
+			foreach ($underlineQuery as $underlineRes){
 				$textPrepend .= self::$_underlinePlaceholder[0];
 				$textAppend = self::$_underlinePlaceholder[1] . $textAppend;
 			}
-				
+			
 			# Tabs
-			if (isset($row['w:tab'])){
+			$tabQuery = $this->_xPath->query("w:tab", $wrObject);
+			foreach ($tabQuery as $tabRes){
 				$text .= self::$_tabPlaceholder;
 			}
-				
-			if (isset($row['w:t'][0]['#text'])){
-				$text .= $textPrepend . $row['w:t'][0]['#text'] . $textAppend;
-			} else {
-				if (isset($row['w:t'])){
-					if (!is_array($row['w:t'])){
-						$text .= $textPrepend . $row['w:t'] . $textAppend;
-					}
-				}
+
+			# Text
+			$textQuery = $this->_xPath->query("w:t", $wrObject);
+			foreach ($textQuery as $textRes){
+				$text .= $textPrepend . $textRes->nodeValue . $textAppend;
 			}
+			
 			return $text;
 		}
 		
@@ -318,11 +320,6 @@
 		 * @return NULL|multitype:string
 		 */
 		protected function _parseNode($node, $type){
-			$inlineBoldFlag = false;
-			$inlineUnderlineFlag = false;
-			$inlineItalicsFlag = false;
-			$wordStyleOverride = null;
-			
 			if ($type == 'p'){
 				$text = '';
 				$nodeHasRow = false;
@@ -397,7 +394,6 @@
 			if ($type == 'table'){
 				$nodeArray = self::_getArray($node);
 				$this->_tableOpen = true;
-				
 				$columnCount = count($nodeArray['w:tblGrid'][0]['w:gridCol']);
 				$rowCount = count($nodeArray['w:tr']);
 				$parsedNode = array(
@@ -418,11 +414,9 @@
 					else 
 						$row['headers'] = false;
 					
-
 					# Row has multiple columns
 					if (is_array($tableRow['w:tc'])){
 						foreach ($tableRow['w:tc'] as $ii => $tableCell){
-							
 							$cellText = '';
 							if (isset($tableCell['w:p'][0]['w:r'])){
 								foreach ($tableCell['w:p'] as $tableRow){
@@ -459,8 +453,16 @@
 			if ($type == 'image'){
 				# Embed an image - images are passed as an array of 'blip' => blipNode, 'rect' => rectNode
 				if (isset($node['blip'])){
-					$blipArr = self::_getArray($node['blip']);
-					$imageToUseId = $blipArr['a:blip'][0]['r:embed'];
+					$blipQuery = $this->_xPath->query("a:blip", $node['blip']);
+					foreach ($blipQuery as $blipRes){						
+						foreach ($blipRes->attributes as $blipEmbedNode){
+							if ($blipEmbedNode->nodeName == 'r:embed'){
+								$imageToUseId = $blipEmbedNode->nodeValue;
+								break 2;
+							}
+						}
+					}
+					
 					$imageData = self::_array_complex_search($this->_images, 'id', $imageToUseId);
 					
 					if (!is_array($imageData)) return null;
@@ -473,26 +475,28 @@
 					
 					# Load the rect if available to load the image dimensions
 					if (isset($node['rect'])){
-						$rectData = self::_getArray($node['rect']);
-						if (isset($rectData['style'])){
-							$imageStyles = $rectData['style'];
-							$imageStyleArray = explode(";", $imageStyles);
-							foreach ($imageStyleArray as $imageStyle){
-								$styleInfo = explode(":", $imageStyle);
-								if (strtolower($styleInfo[0]) == 'width')
-									$w = $styleInfo[1];
+						$rectStyles = $node['rect']->attributes;
+						foreach ($rectStyles as $rectStyleNode){
+							if ($rectStyleNode->nodeName == 'style'){
+								$imageStyleArray = explode(";", $rectStyleNode->nodeValue);
+								foreach ($imageStyleArray as $imageStyle){
+									$styleInfo = explode(":", $imageStyle);
+									if (strtolower($styleInfo[0]) == 'width')
+										$w = $styleInfo[1];
 								
-								if (strtolower($styleInfo[0]) == 'height')
-									$h = $styleInfo[1];
+									if (strtolower($styleInfo[0]) == 'height')
+										$h = $styleInfo[1];
+								}
+								break;
 							}
 						}
 					}
 					$parsedNode = array(
-							'type' => 'image',
-							'name' => $imageData[0]['title'],
-							'h' => $h,
-							'w' => $w,
-							'data' => $imageData[0]['data']
+						'type' => 'image',
+						'name' => $imageData[0]['title'],
+						'h' => $h,
+						'w' => $w,
+						'data' => $imageData[0]['data']
 					);
 					
 				} else $parsedNode = null;
@@ -503,7 +507,7 @@
 		
 		/**
 		 * @name _parseText
-		 * @desc Parses out any html-invalid charecters from the string into html entities, before the processing gets too far along
+		 * @desc Escapes any entities from the string into html entities, and replaces the placeholders with valid html
 		 * @param string $text
 		 * @return string $processedText
 		 */
@@ -514,7 +518,6 @@
 				$text = str_replace(self::$_italicsPlaceholder, array('<i>', '</i>'), $text);
 				$text = str_replace(self::$_boldPlaceholder, array('<b>', '</b>'), $text);
 				$text = str_replace(self::$_underlinePlaceholder, array('<span class="underline">', '</span>') , $text);
-				
 				$text = str_replace(self::$_hrefPlaceholder, array('<a href="', '">', '</a>'), $text);
 			}
 			
