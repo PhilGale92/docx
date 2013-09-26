@@ -155,17 +155,17 @@
 				$elements = $dom->getElementsByTagName('*');
 				foreach ($elements as $node) {
 					if ($node->nodeName == 'Relationship'){
-						$nodeArr = self::_getArray($node);
-						if (strpos($nodeArr['Target'], 'media/') !== false){
-							if (isset($nodeArr['Target']) && isset($nodeArr['Id'])){
-								$imageName = substr($nodeArr['Target'], 6);
-								$this->_images[$imageName]['id'] = $nodeArr['Id'];
+						$relationshipAttributes = $node->attributes;
+						$relationId = $relationshipAttributes->item(0);
+						$relationTarget = $relationshipAttributes->item(2);
+						if (is_object($relationId) && is_object($relationTarget)){
+							if (strpos($relationTarget->nodeValue, 'media/') !== false){
+								$imageName = substr($relationTarget->nodeValue, 6);
+								$this->_images[$imageName]['id'] = $relationId->nodeValue;
 							}
 						}
 					}
-					
 				}
-				
 			}
 		}
 		
