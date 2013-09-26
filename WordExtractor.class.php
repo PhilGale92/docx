@@ -155,17 +155,17 @@
 				$elements = $dom->getElementsByTagName('*');
 				foreach ($elements as $node) {
 					if ($node->nodeName == 'Relationship'){
-						$nodeArr = self::_getArray($node);
-						if (strpos($nodeArr['Target'], 'media/') !== false){
-							if (isset($nodeArr['Target']) && isset($nodeArr['Id'])){
-								$imageName = substr($nodeArr['Target'], 6);
-								$this->_images[$imageName]['id'] = $nodeArr['Id'];
+						$relationshipAttributes = $node->attributes;
+						$relationId = $relationshipAttributes->item(0);
+						$relationTarget = $relationshipAttributes->item(2);
+						if (is_object($relationId) && is_object($relationTarget)){
+							if (strpos($relationTarget->nodeValue, 'media/') !== false){
+								$imageName = substr($relationTarget->nodeValue, 6);
+								$this->_images[$imageName]['id'] = $relationId->nodeValue;
 							}
 						}
 					}
-					
 				}
-				
 			}
 		}
 		
@@ -363,19 +363,19 @@
 				$listResQuery = $this->_xPath->query("w:pPr/w:numPr", $node);
 				$listArray = array();
 				foreach ($listResQuery as $listResult){
-					$listArray = self::_getArray($listResult);
-				}
-				if (!empty($listArray)){
 					$indent = 0;
-					if (isset($listArray['w:ilvl'][0]['w:val'])){
-						$indent = $listArray['w:ilvl'][0]['w:val'];
+					$indentNode = $listResult->childNodes->item(0);
+					if ($indentNode->nodeName == 'w:ilvl'){
+						$indent = $indentNode->attributes->item(0)->nodeValue;
 					}
+					
 					$parsedNode = array(
 						'type' => 'list_item',
 						'style' => $this->_curStyle,
 						'text' => $text,
 						'indent' => $indent,
 					);
+					
 					return $parsedNode;
 				}
 				
