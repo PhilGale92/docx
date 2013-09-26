@@ -363,19 +363,19 @@
 				$listResQuery = $this->_xPath->query("w:pPr/w:numPr", $node);
 				$listArray = array();
 				foreach ($listResQuery as $listResult){
-					$listArray = self::_getArray($listResult);
-				}
-				if (!empty($listArray)){
 					$indent = 0;
-					if (isset($listArray['w:ilvl'][0]['w:val'])){
-						$indent = $listArray['w:ilvl'][0]['w:val'];
+					$indentNode = $listResult->childNodes->item(0);
+					if ($indentNode->nodeName == 'w:ilvl'){
+						$indent = $indentNode->attributes->item(0)->nodeValue;
 					}
+					
 					$parsedNode = array(
 						'type' => 'list_item',
 						'style' => $this->_curStyle,
 						'text' => $text,
 						'indent' => $indent,
 					);
+					
 					return $parsedNode;
 				}
 				
