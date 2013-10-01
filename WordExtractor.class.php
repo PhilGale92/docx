@@ -24,6 +24,12 @@
 		 */
 		protected $_curStyle = '';
 		/**
+		 * @name _curIndent
+		 * @desc Stores value of the current line indentation (null means no indent)
+		 * @var string
+		 */
+		protected $_curIndent = null;
+		/**
 		 * @name _xPath
 		 * @desc Stores the xPath object
 		 * @var xPath object
@@ -43,6 +49,7 @@
 		protected $_images = array();
 				
 		protected static $_tabPlaceholder = "{[_EXTRACT_TAB_PLACEHOLDER]}";
+		protected static $_indentPlaceholder = "{[_EXTRACT_INDENT_PLACEHOLDER]}";
 		protected static $_boldPlaceholder = array('{[_BOLD_OPEN_PLACEHOLDER]}', '{[_BOLD_CLOSE_PLACEHOLDER]}');
 		protected static $_italicsPlaceholder = array('{[_EMPHASIZE_OPEN_PLACEHOLDER]}', '{[_EMPHASIZE_CLOSE_PLACEHOLDER]}');
 		protected static $_underlinePlaceholder = array('{[_UNDERLINE_OPEN_PLACEHOLDER]}', '{[_UNDERLINE_CLOSE_PLACEHOLDER]}');
@@ -157,12 +164,35 @@
 		}
 		
 		/**
+		 * @name _parseNodeIndent
+		 * @desc Takes a node and returns the nodes set indentation
+		 * @param domObject $node
+		 * @return numeric $indent (or NULL if there is no indent)
+		 */
+		protected function _parseNodeIndent($node){
+			$indent = null;
+			$indentQuery = $this->_xPath->query("w:pPr/w:ind", $node);
+			foreach ($indentQuery as $indentRes){
+				if ($indentRes->nodeName == 'w:ind'){
+					foreach ($indentRes->attributes as $indentResAttr){
+						if ($indentResAttr->nodeName == 'w:firstLine' || $indentResAttr->nodeName == 'w:left'){
+							$indent = $indentResAttr->nodeValue;
+							break 2;
+						}
+					}
+				}
+			}
+			return $indent;
+		}
+		
+		
+		/**
 		 * @name _parseNodeStyle
 		 * @desc Takes a node and returns the nodes set style
 		 * @param domObject $node
 		 * @return string $style - returns '' if no style is found
 		 */
-		protected function _parseNodeStyle($node){
+		protected function _parseNodeStyle($node){			
 			$styleQuery = $this->_xPath->query("w:pPr/w:pStyle", $node);
 			$style = '';
 			foreach ($styleQuery as $styleResult){
@@ -181,8 +211,9 @@
 			switch ($nodeType){
 				case 'w:p':
 					$this->_curStyle = $this->_parseNodeStyle($node);
-					$text = '';
+					$this->_curIndent = $this->_parseNodeIndent($node);
 					
+					$text = '';
 					foreach ($node->childNodes as $child){
 						
 						# standard text handler
@@ -484,6 +515,7 @@
 			$text = htmlentities($text, ENT_QUOTES, $this->encoding);
 			if ($this->convertInlineHtml){
 				$text = str_replace(self::$_tabPlaceholder, '<span class="tab_placeholder"></span>', $text);
+				$text = str_replace(self::$_indentPlaceholder, '<span class="indent_placeholder"></span>', $text);
 				$text = str_replace(self::$_italicsPlaceholder, array('<i>', '</i>'), $text);
 				$text = str_replace(self::$_boldPlaceholder, array('<b>', '</b>'), $text);
 				$text = str_replace(self::$_underlinePlaceholder, array('<span class="underline">', '</span>') , $text);
@@ -575,6 +607,11 @@
 			$tabQuery = $this->_xPath->query("w:tab", $wrObject);
 			foreach ($tabQuery as $tabRes){
 				$text .= self::$_tabPlaceholder;
+			}
+			
+			# Indent
+			if ($this->_curIndent != null){
+				$text .= self::$_indentPlaceholder;
 			}
 			
 			# Text
