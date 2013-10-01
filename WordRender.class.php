@@ -26,6 +26,31 @@
 		 */
 		public $unknownStyles = array();
 		
+		private function renderTextbox($node){
+			$html = '<div class="textbox">';
+			$hasContent = false;
+			foreach ($node['content'] as $contentItem){
+				if (is_array($contentItem)){
+					$hasContent = true;
+					switch ($contentItem['type']){
+						case 'p':
+							$html .= $this->renderParagraph($contentItem);
+						break;
+						case 'list_item':
+							#@todo - (non inline) list items inside text boxes not yet implemented
+						break;
+						case 'image':
+							$html .= $this->renderImage($contentItem);
+						break;
+					}
+				}
+			}
+			
+			if (!$hasContent) return '';
+			$html .= '</div>';
+			return $html;
+		}
+		
 		private function renderParagraph($node){
 			$html = '';
 			# Check if it was parsed as a list, or standard paragraph
@@ -125,6 +150,7 @@
 										$html .= $this->renderParagraph($cellChild);
 									break;
 									case 'list_item':
+										#@todo - (non inline) list items inside text boxes not yet implemented
 									break;
 									case 'image':
 										$html .= $this->renderImage($cellChild);
@@ -159,6 +185,18 @@
 			$listItems = array();
 			foreach ($this->parsed as $i => $node){
 				$html = '';
+				
+				if ($node['type'] == 'textbox'){
+					$html = $this->renderTextbox($node);
+					$endFloat = true;
+					if (isset($this->parsed[$i + 1])){
+						if ($this->parsed[$i + 1]['type'] == 'textbox'){
+							$endFloat = false;
+						}
+					}
+					if ($endFloat) 
+						$html .= '<div class="clear"></div>';
+				}
 				
 				if ($node['type'] == 'p')
 					$html = $this->renderParagraph($node);

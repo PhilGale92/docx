@@ -387,12 +387,33 @@
 		 * @return NULL|multitype:string
 		 */
 		protected function _parseContainer($node, $type){
+			if ($type == 'w:txbxContent'){
+				$textboxContentItems = array();
+				foreach ($node->childNodes as $textboxChild){
+					if ($textboxChild->nodeName == 'w:p')
+						$textboxContentItems[] = $this->_parse($textboxChild, 'w:p');
+				}
+				$parsedNode = array(
+					'content' => $textboxContentItems,
+					'type' => 'textbox',
+				);
+			}
 			if ($type == 'w:tbl'){
 				# Retrieve the table grid info (we need column count details & row count)
-				$nodeArray = self::_getArray($node);
-				$columnCount = count($nodeArray['w:tblGrid'][0]['w:gridCol']);
-				$rowCount = count($nodeArray['w:tr']);
+				$colCountQuery = $this->_xPath->query("w:tblGrid/w:gridCol", $node);
+				$columnCount = 0;
+				foreach ($colCountQuery as $gridColNode){
+					if ($gridColNode->nodeName == 'w:gridCol')
+						$columnCount++;
+				}
 				
+				$rowCountQuery = $this->_xPath->query("w:tr", $node);
+				$rowCount = 0;
+				foreach ($rowCountQuery as $rowNode){
+					if ($rowNode->nodeName == 'w:tr')
+						$rowCount++;
+				}
+								
 				$parsedNode = array(
 					'rows' => array(),
 					'type' => 'table',
@@ -404,14 +425,12 @@
 				foreach ($rowQuery as $rowNode){
 					$rowCounter++;
 					
-
 					$cellQuery = $this->_xPath->query("w:tc", $rowNode);
 					$cellCounter = -1;
 					foreach ($cellQuery as $cellNode){
 						$cellCounter++;	
 						$paragraphRes = array();
 						foreach ($cellNode->childNodes as $cellChildNode){
-							
 							
 							# If the cell directly contains an image:
 							if ($cellChildNode->nodeName == 'w:drawing'){
@@ -566,36 +585,7 @@
 						
 			return $text;
 		}
-		
-		/**
-		 * @name _getArray
-		 * @desc Converts a dom object into a PHP array - utility method
-		 * @param domobject $node
-		 * @return array
-		 */
-		protected static function _getArray($node){
-			$array = false;
-			if ($node->hasAttributes()){
-				foreach ($node->attributes as $attr){
-					$array[$attr->nodeName] = $attr->nodeValue;
-				}
-			}
 				
-			if ($node->hasChildNodes()){
-				if ($node->childNodes->length == 1)	{
-					$array[$node->firstChild->nodeName] = $node->firstChild->nodeValue;
-				} else {
-					foreach ($node->childNodes as $childNode){
-						if ($childNode->nodeType != XML_TEXT_NODE)	{
-							$array[$childNode->nodeName][] = self::_getArray($childNode);
-						}
-					}
-				}
-			}
-		
-			return $array;
-		}
-		
 		/**
 		 * @name _array_complex_search
 		 * @desc Finds a key within an associative array using multiple values - utility method
