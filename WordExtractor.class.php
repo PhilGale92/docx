@@ -30,18 +30,6 @@
 		 */
 		protected $_xPath = null;
 		/**
-		 * @name _tableOpen
-		 * @desc If set to true the table parser is currently in progress
-		 * @var boolean
-		 */
-		protected $_tableOpen = false;
-		/**
-		 * @name _skipCountP
-		 * @desc Stores the amount of P tags to skip after a table has been rendered
-		 * @var numeric
-		 */
-		protected $_skipCountP = 0;
-		/**
 		 * @name _lastPTag
 		 * @desc Stores the key of the most recent P tag to have been inserted
 		 * @var numeric
@@ -53,8 +41,7 @@
 		 * @var array
 		 */
 		protected $_images = array();
-		
-		
+				
 		protected static $_tabPlaceholder = "{[_EXTRACT_TAB_PLACEHOLDER]}";
 		protected static $_boldPlaceholder = array('{[_BOLD_OPEN_PLACEHOLDER]}', '{[_BOLD_CLOSE_PLACEHOLDER]}');
 		protected static $_italicsPlaceholder = array('{[_EMPHASIZE_OPEN_PLACEHOLDER]}', '{[_EMPHASIZE_CLOSE_PLACEHOLDER]}');
@@ -187,6 +174,150 @@
 			return $style;
 		}
 		
+		protected function _parse($node, $nodeType){
+			$matchedNode = false;
+			$lastParsedNode = null;
+			
+			switch ($nodeType){
+				case 'w:p':
+					$this->_curStyle = $this->_parseNodeStyle($node);
+					$text = '';
+					
+					foreach ($node->childNodes as $child){
+						
+						# standard text handler
+						if ($child->nodeName == 'w:r'){
+							$text .= $this->_parseWR($child);
+						}
+						
+						# link handler
+						if ($child->nodeName == 'w:hyperlink'){
+							$hyperlinkQuery = $this->_xPath->query("w:r/w:t", $child);
+							$hyperlink = '';
+							foreach ($hyperlinkQuery as $hyperlinkRes){
+								$hyperlink = $hyperlinkRes->nodeValue;
+								$rowObj = $hyperlinkRes->parentNode;
+							}
+							if ($hyperlink != ''){
+								if (substr($hyperlink, 0, 4) != 'http') $hyperlink = 'http://' . $hyperlink;
+								$text .= $this->_parseWR($rowObj, self::$_hrefPlaceholder[0] . $hyperlink . self::$_hrefPlaceholder[1], self::$_hrefPlaceholder[2]);
+							}
+						}
+					}
+					
+					$text = $this->_parseText($text);
+					
+					# List processing
+					$listResQuery = $this->_xPath->query("w:pPr/w:numPr", $node);
+					$listArray = array();
+					foreach ($listResQuery as $listResult){
+						$indent = 0;
+						$indentNode = $listResult->childNodes->item(0);
+						if ($indentNode->nodeName == 'w:ilvl'){
+							$indent = $indentNode->attributes->item(0)->nodeValue;
+						}
+							
+						$lastParsedNode = array(
+							'type' => 'list_item',
+							'style' => $this->_curStyle,
+							'text' => $text,
+							'indent' => $indent,
+						);
+						$matchedNode = true;
+					}
+					if (!$matchedNode){
+						$style = $this->_curStyle;
+						if ($text != ''){
+							$inlineText = $this->_parseInlineLists($text);
+							$lastParsedNode = array(
+								'text' => $inlineText,
+								'type' => 'p',
+								'style' => $style
+							);
+							$matchedNode = true;
+						}
+					}
+				break;
+				case 'w:drawing':
+					# Get the blipFill for the imageRefId
+					$mcAltContentXPath = $this->_xPath->query("*/a:graphic/a:graphicData/pic:pic/pic:blipFill", $node);
+					$blipNode = $rectNode = null;
+					
+					foreach ($mcAltContentXPath as $blipFill){
+						# The blip however is always required to get the imageRefId
+						if ($blipFill->nodeName == null) continue;
+						$blipNode = $blipFill;
+					}
+					
+					# Get the prev. element to load the alterateContent block
+					$prevElement = $node->parentNode->previousSibling;
+					if (!isset($prevElement->nodeName)) continue;
+					
+					# Load the alt Content for the dimensions
+					$mcDimensionXPath = $this->_xPath->query("mc:AlternateContent/mc:Fallback/w:pict/v:rect", $prevElement);
+						foreach ($mcDimensionXPath as $dimensionWrapper){
+							# If 'rect' is not found, we just use image width/height = auto so it is not required
+							if ($dimensionWrapper->nodeName != null)
+								$rectNode = $dimensionWrapper;
+					}
+					
+					# Embed an image - images are passed as an array of 'blip' => blipNode, 'rect' => rectNode
+					if ($blipNode != null){
+						$blipQuery = $this->_xPath->query("a:blip", $blipNode);
+						foreach ($blipQuery as $blipRes){
+							foreach ($blipRes->attributes as $blipEmbedNode){
+								if ($blipEmbedNode->nodeName == 'r:embed'){
+									$imageToUseId = $blipEmbedNode->nodeValue;
+									break 2;
+								}
+							}
+						}
+							
+						$imageData = self::_array_complex_search($this->_images, 'id', $imageToUseId);
+							
+						if (!is_array($imageData)) return null;
+							
+						# Defaults are initally set as 'auto'
+						if (!isset($imageData[0]['w'])) return null;
+							
+						$w = $imageData[0]['w'];
+						$h = $imageData[0]['h'];
+							
+						# Load the rect if available to load the image dimensions
+						if ($rectNode != null){
+							$rectStyles = $rectNode->attributes;
+							foreach ($rectStyles as $rectStyleNode){
+								if ($rectStyleNode->nodeName == 'style'){
+									$imageStyleArray = explode(";", $rectStyleNode->nodeValue);
+									foreach ($imageStyleArray as $imageStyle){
+										$styleInfo = explode(":", $imageStyle);
+										if (strtolower($styleInfo[0]) == 'width')
+											$w = $styleInfo[1];
+								
+										if (strtolower($styleInfo[0]) == 'height')
+										$h = $styleInfo[1];
+									}
+									break;
+								}
+							}
+						}
+						$matchedNode = true;
+						$lastParsedNode = array(
+							'type' => 'image',
+							'name' => $imageData[0]['title'],
+							'h' => $h,
+							'w' => $w,
+							'data' => $imageData[0]['data']
+						);		
+					}
+				break;
+			}
+			
+		
+			if (!$matchedNode) $lastParsedNode = null;
+			return $lastParsedNode;
+		}
+		
 		/**
 		 * @name _parseXml
 		 * @desc Converts the raw XML data into a PHP array
@@ -207,57 +338,38 @@
 			$xPath->registerNamespace('v', "urn:schemas-microsoft-com:vml");
 			$this->_xPath = $xPath;
 			
-			# This stage gets the appropriate domelements from the document, and passes them into the _parseNode() method
+			# This stage gets the appropriate domelements from the document, and passes them into the _parse() / _parseContainer methods
 			foreach ($elements as $node) {
 				switch ($node->nodeName){
-					# Paragraph parsing
 					case 'w:p':
-						# Ignore textboxes untill a reliable parser is known
 						if ($node->parentNode->nodeName == 'w:txbxContent') continue;
+						if ($node->parentNode->nodeName == 'w:tc') continue;
+						if ($node->parentNode->parentNode->nodeName == 'w:tc') continue;
 						
-						if (!$this->_tableOpen){
-							$this->_curStyle = $this->_parseNodeStyle($node);
-							$parsedArr = $this->_parseNode($node, 'p');
-							if ($parsedArr != null){
-								$this->parsed[] = $parsedArr;
-								$this->_lastPTag = count($this->parsed) - 1;
-							}
+						$parsedArr = $this->_parse($node, 'w:p');
+												
+						if ($parsedArr != null){
+							$this->parsed[] = $parsedArr;
+							$this->_lastPTag = count($this->parsed) - 1;
 						}
 					break;
-					
-					# Image parsing
 					case 'w:drawing':
-						# Get the blipFill for the imageRefId
-						$mcAltContentXPath = $xPath->query("*/a:graphic/a:graphicData/pic:pic/pic:blipFill", $node);
-						$imageData = array();
-						
-						foreach ($mcAltContentXPath as $blipFill){
-							# The blip however is always required to get the imageRefId
-							if ($blipFill->nodeName == null) continue;
-							$imageData['blip'] = $blipFill;
-						}
-						
-						# Get the prev. element to load the alterateContent block
-						$prevElement = $node->parentNode->previousSibling;
-						if (!isset($prevElement->nodeName)) continue;
-						
-						# Load the alt Content for the dimensions
-						$mcDimensionXPath = $xPath->query("mc:AlternateContent/mc:Fallback/w:pict/v:rect", $prevElement);
-						foreach ($mcDimensionXPath as $dimensionWrapper){
-							# If 'rect' is not found, we just use image width/height = auto so it is not required
-							if ($dimensionWrapper->nodeName != null)
-								$imageData['rect'] = $dimensionWrapper;
-						}
-						
-						$parsedArr = $this->_parseNode($imageData, 'image');
+						if ($node->parentNode->nodeName == 'w:txbxContent') continue;
+						if ($node->parentNode->nodeName == 'w:tc') continue;
+						if ($node->parentNode->parentNode->parentNode->nodeName == 'w:tc') continue;
+						$parsedArr = $this->_parse($node, 'w:drawing');
 						if ($parsedArr != null){
 							$this->parsed[] = $parsedArr;
 						}
 					break;
+					case 'w:txbxContent':
+						$parsedArr = $this->_parseContainer($node, 'w:txbxContent');
+						if ($parsedArr != null)
+							$this->parsed[] = $parsedArr;
+					break;
 					
-					# Table parsing
 					case 'w:tbl':
-						$parsedArr = $this->_parseNode($node, 'table');
+						$parsedArr = $this->_parseContainer($node, 'w:tbl');
 						if ($parsedArr != null)
 							$this->parsed[] = $parsedArr;
 					break;
@@ -265,243 +377,81 @@
 			}
 		}
 		
-		/**
-		 * @name _parseWR
-		 * @desc Converts a WR object into text
-		 * @param domobject $wrObject
-		 * @param string $textPrepend
-		 * @param string $textAppend
-		 * @return string $text
-		 */
-		protected function _parseWR($wrObject, $textPrepend = '', $textAppend = ''){
-			$text = '';
-			
-			# Bold
-			$boldQuery = $this->_xPath->query("w:rPr/w:b", $wrObject);
-			foreach ($boldQuery as $boldRes){
-				$textPrepend .= self::$_boldPlaceholder[0];
-				$textAppend = self::$_boldPlaceholder[1] . $textAppend;
-			}
-			
-			# Italics
-			$italicsQuery = $this->_xPath->query("w:rPr/w:i", $wrObject);
-			foreach ($italicsQuery as $italicRes){
-				$textPrepend .= self::$_italicsPlaceholder[0];
-				$textAppend = self::$_italicsPlaceholder[1] . $textAppend;
-			}
-			
-			# Underlines
-			$underlineQuery = $this->_xPath->query("w:rPr/w:u", $wrObject);
-			foreach ($underlineQuery as $underlineRes){
-				$textPrepend .= self::$_underlinePlaceholder[0];
-				$textAppend = self::$_underlinePlaceholder[1] . $textAppend;
-			}
-			
-			# Tabs
-			$tabQuery = $this->_xPath->query("w:tab", $wrObject);
-			foreach ($tabQuery as $tabRes){
-				$text .= self::$_tabPlaceholder;
-			}
 
-			# Text
-			$textQuery = $this->_xPath->query("w:t", $wrObject);
-			foreach ($textQuery as $textRes){
-				$text .= $textPrepend . $textRes->nodeValue . $textAppend;
-			}
-			
-			return $text;
-		}
 		
 		/**
-		 * @name _parseNode
-		 * @desc Retrives the data from a given '*' node from the xml
+		 * @name _parseContainer
+		 * @desc Handles domElements that contain sub-elements (eg. tables containing images / text)
 		 * @param domobject $node
 		 * @param string $type
 		 * @return NULL|multitype:string
 		 */
-		protected function _parseNode($node, $type){
-			if ($type == 'p'){
-				$text = '';
-				$nodeHasRow = false;
-				
-				foreach ($node->childNodes as $child){
-					if ($child->nodeName == 'w:r' || $child->nodeName == 'w:hyperlink'){
-						if ($nodeHasRow == false){
-							if ($this->_skipCountP > 0){
-								$this->_skipCountP--;
-								return null;
-							}
-							$nodeHasRow = true;
-						}
-					}
-					
-					# standard text handler
-					if ($child->nodeName == 'w:r'){
-						$text .= $this->_parseWR($child);
-					}
-					
-					# link handler
-					if ($child->nodeName == 'w:hyperlink'){
-						$hyperlinkQuery = $this->_xPath->query("w:r/w:t", $child);
-						$hyperlink = '';
-						foreach ($hyperlinkQuery as $hyperlinkRes){
-							$hyperlink = $hyperlinkRes->nodeValue;
-							$rowObj = $hyperlinkRes->parentNode;
-						}
-						
-						if ($hyperlink != ''){
-							if (substr($hyperlink, 0, 4) != 'http') $hyperlink = 'http://' . $hyperlink;
-							$text .= $this->_parseWR($rowObj, self::$_hrefPlaceholder[0] . $hyperlink . self::$_hrefPlaceholder[1], self::$_hrefPlaceholder[2]);
-						}
-						
-					}
-				}
-								
-				$text = $this->_parseText($text);
-				
-				# List processing
-				$listResQuery = $this->_xPath->query("w:pPr/w:numPr", $node);
-				$listArray = array();
-				foreach ($listResQuery as $listResult){
-					$indent = 0;
-					$indentNode = $listResult->childNodes->item(0);
-					if ($indentNode->nodeName == 'w:ilvl'){
-						$indent = $indentNode->attributes->item(0)->nodeValue;
-					}
-					
-					$parsedNode = array(
-						'type' => 'list_item',
-						'style' => $this->_curStyle,
-						'text' => $text,
-						'indent' => $indent,
-					);
-					
-					return $parsedNode;
-				}
-				
-				$style = $this->_curStyle;
-				
-				if ($text == '') return null;
-				
-				$parsedNode = array(
-					'text' => $this->_parseInlineLists($text),
-					'type' => 'p',
-					'style' => $style
-				);
-			
-			}
-			
-			if ($type == 'table'){
+		protected function _parseContainer($node, $type){
+			if ($type == 'w:tbl'){
+				# Retrieve the table grid info (we need column count details & row count)
 				$nodeArray = self::_getArray($node);
-				$this->_tableOpen = true;
 				$columnCount = count($nodeArray['w:tblGrid'][0]['w:gridCol']);
 				$rowCount = count($nodeArray['w:tr']);
+				
 				$parsedNode = array(
 					'rows' => array(),
 					'type' => 'table',
 					'columnCount' => $columnCount,
 					'rowCount' => $rowCount,
 				);
-				$counter = -1;				
-				foreach ($nodeArray['w:tr'] as $i => $tableRow){
-					$counter++;
+				$rowQuery = $this->_xPath->query("w:tr", $node);
+				$rowCounter = -1;
+				foreach ($rowQuery as $rowNode){
+					$rowCounter++;
 					
-					$row = array(
-						$counter => array(),
-					);
-					if ($i == 0)
-						$row['headers'] = true;
-					else 
-						$row['headers'] = false;
-					
-					# Row has multiple columns
-					if (is_array($tableRow['w:tc'])){
-						foreach ($tableRow['w:tc'] as $ii => $tableCell){
-							$cellText = '';
-							if (isset($tableCell['w:p'][0]['w:r'])){
-								foreach ($tableCell['w:p'] as $tableRow){
-									if (isset($tableRow['w:r'])){
-										$this->_skipCountP++;
-										foreach ($tableRow['w:r'] as $iii => $tableCellRow){
-											if (isset($tableCellRow['w:t'][0]['#text'])){
-												$cellText .= $tableCellRow['w:t'][0]['#text'] . ' ';
-											}
+
+					$cellQuery = $this->_xPath->query("w:tc", $rowNode);
+					$cellCounter = -1;
+					foreach ($cellQuery as $cellNode){
+						$cellCounter++;	
+						$paragraphRes = array();
+						foreach ($cellNode->childNodes as $cellChildNode){
+							
+							
+							# If the cell directly contains an image:
+							if ($cellChildNode->nodeName == 'w:drawing'){
+								$imageRes = $this->_parse($cellChildNode, 'w:drawing');
+								if ($imageRes != null){
+									$paragraphRes[] = $imageRes;
+								}
+							}
+							
+							# If the cell contains a paragraph
+							if ($cellChildNode->nodeName == 'w:p'){
+								# Iterate through each text run, so if there is an image we can spit it into the table inlined
+								$singleParaRes =  $this->_parse($cellChildNode, 'w:p');
+								if ($singleParaRes != null){
+									$paragraphRes[] = $singleParaRes;
+								}
+								
+								$paragraphRunRes = $this->_xPath->query("w:r", $cellChildNode);
+								foreach ($paragraphRunRes as $paragraphNode){
+									foreach ($paragraphNode->childNodes as $paragraphRunChild){
+										if ($paragraphRunChild->nodeName == 'w:drawing'){
+											$imageRes = $this->_parse($paragraphRunChild, 'w:drawing');
+											if ($imageRes != null)
+												$paragraphRes[] = $imageRes;
 										}
 									}
 								}
 							}
 							
-							$cellText = $this->_parseText(trim($cellText));
-							
-							$row[$counter][] = array(
-								'text' => $this->_parseInlineLists($cellText),
-								'colspan' => 1,
-							);
 						}
-					} else {
-						$this->_skipCountP += $rowCount;
-						
-						# Row has single col
-						$row[$counter]['colspan'] = $columnCount;
-						$row[$counter]['text'] = $this->_parseInlineLists($this->_parseText($tableRow['w:tc']));
+						$parsedNode['rows'][$rowCounter]['cells'][$cellCounter] = $paragraphRes;
 					}
-					$parsedNode['rows'][] = $row;
+					if ($rowCounter == 0)
+						$parsedNode['rows'][$rowCounter]['headers'] = true;
+					else
+						$parsedNode['rows'][$rowCounter]['headers'] = false;
 				}
-				$this->_tableOpen = false;
 			}
-			
-			if ($type == 'image'){
-				# Embed an image - images are passed as an array of 'blip' => blipNode, 'rect' => rectNode
-				if (isset($node['blip'])){
-					$blipQuery = $this->_xPath->query("a:blip", $node['blip']);
-					foreach ($blipQuery as $blipRes){						
-						foreach ($blipRes->attributes as $blipEmbedNode){
-							if ($blipEmbedNode->nodeName == 'r:embed'){
-								$imageToUseId = $blipEmbedNode->nodeValue;
-								break 2;
-							}
-						}
-					}
-					
-					$imageData = self::_array_complex_search($this->_images, 'id', $imageToUseId);
-					
-					if (!is_array($imageData)) return null;
-					
-					# Defaults are initally set as 'auto'
-					if (!isset($imageData[0]['w'])) return null;
-					
-					$w = $imageData[0]['w'];
-					$h = $imageData[0]['h'];
-					
-					# Load the rect if available to load the image dimensions
-					if (isset($node['rect'])){
-						$rectStyles = $node['rect']->attributes;
-						foreach ($rectStyles as $rectStyleNode){
-							if ($rectStyleNode->nodeName == 'style'){
-								$imageStyleArray = explode(";", $rectStyleNode->nodeValue);
-								foreach ($imageStyleArray as $imageStyle){
-									$styleInfo = explode(":", $imageStyle);
-									if (strtolower($styleInfo[0]) == 'width')
-										$w = $styleInfo[1];
-								
-									if (strtolower($styleInfo[0]) == 'height')
-										$h = $styleInfo[1];
-								}
-								break;
-							}
-						}
-					}
-					$parsedNode = array(
-						'type' => 'image',
-						'name' => $imageData[0]['title'],
-						'h' => $h,
-						'w' => $w,
-						'data' => $imageData[0]['data']
-					);
-					
-				} else $parsedNode = null;
-			}
-			
+
+			if (!isset($parsedNode)) return null;
 			return $parsedNode;
 		}
 		
@@ -571,6 +521,53 @@
 		}
 		
 		/**
+		 * @name _parseWR
+		 * @desc Converts a WR object into text
+		 * @param domobject $wrObject
+		 * @param string $textPrepend
+		 * @param string $textAppend
+		 * @return string $text
+		 */
+		protected function _parseWR($wrObject, $textPrepend = '', $textAppend = ''){
+			$text = '';
+				
+			# Bold
+			$boldQuery = $this->_xPath->query("w:rPr/w:b", $wrObject);
+			foreach ($boldQuery as $boldRes){
+				$textPrepend .= self::$_boldPlaceholder[0];
+				$textAppend = self::$_boldPlaceholder[1] . $textAppend;
+			}
+				
+			# Italics
+			$italicsQuery = $this->_xPath->query("w:rPr/w:i", $wrObject);
+			foreach ($italicsQuery as $italicRes){
+				$textPrepend .= self::$_italicsPlaceholder[0];
+				$textAppend = self::$_italicsPlaceholder[1] . $textAppend;
+			}
+						
+			# Underlines
+			$underlineQuery = $this->_xPath->query("w:rPr/w:u", $wrObject);
+			foreach ($underlineQuery as $underlineRes){
+				$textPrepend .= self::$_underlinePlaceholder[0];
+				$textAppend = self::$_underlinePlaceholder[1] . $textAppend;
+			}
+			
+			# Tabs
+			$tabQuery = $this->_xPath->query("w:tab", $wrObject);
+			foreach ($tabQuery as $tabRes){
+				$text .= self::$_tabPlaceholder;
+			}
+			
+			# Text
+			$textQuery = $this->_xPath->query("w:t", $wrObject);
+			foreach ($textQuery as $textRes){
+				$text .= $textPrepend . $textRes->nodeValue . $textAppend;
+			}
+						
+			return $text;
+		}
+		
+		/**
 		 * @name _getArray
 		 * @desc Converts a dom object into a PHP array - utility method
 		 * @param domobject $node
@@ -583,7 +580,7 @@
 					$array[$attr->nodeName] = $attr->nodeValue;
 				}
 			}
-			
+				
 			if ($node->hasChildNodes()){
 				if ($node->childNodes->length == 1)	{
 					$array[$node->firstChild->nodeName] = $node->firstChild->nodeValue;
