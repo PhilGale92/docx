@@ -475,7 +475,7 @@
 			foreach ($indentQuery as $indentRes){
 				if ($indentRes->nodeName == 'w:ind'){
 					foreach ($indentRes->attributes as $indentResAttr){
-						if ($indentResAttr->nodeName == 'w:firstLine' || $indentResAttr->nodeName == 'w:left'){
+						if ($indentResAttr->nodeName == 'w:firstLine'){
 							$indent = $indentResAttr->nodeValue;
 							break 2;
 						}
