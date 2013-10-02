@@ -164,46 +164,61 @@
 		}
 		
 		/**
-		 * @name _parseNodeIndent
-		 * @desc Takes a node and returns the nodes set indentation
-		 * @param domObject $node
-		 * @return numeric $indent (or NULL if there is no indent)
+		 * @name _parseXml
+		 * @desc Converts the raw XML data into a PHP array
 		 */
-		protected function _parseNodeIndent($node){
-			$indent = null;
-			$indentQuery = $this->_xPath->query("w:pPr/w:ind", $node);
-			foreach ($indentQuery as $indentRes){
-				if ($indentRes->nodeName == 'w:ind'){
-					foreach ($indentRes->attributes as $indentResAttr){
-						if ($indentResAttr->nodeName == 'w:firstLine' || $indentResAttr->nodeName == 'w:left'){
-							$indent = $indentResAttr->nodeValue;
-							break 2;
+		protected function _parseXml(){
+			$dom = new \DOMDocument();
+			$dom->loadXML($this->_rawXml, LIBXML_NOENT | LIBXML_XINCLUDE | LIBXML_NOERROR | LIBXML_NOWARNING);
+			$dom->encoding = $this->encoding;
+			$elements = $dom->getElementsByTagName('*');
+				
+			# Set up xPath for image parsing
+			$xPath = new DOMXPath($dom);
+			$xPath->registerNamespace('mc', "http://schemas.openxmlformats.org/markup-compatibility/2006");
+			$xPath->registerNamespace('wp', "http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing");
+			$xPath->registerNamespace('w', "http://schemas.openxmlformats.org/wordprocessingml/2006/main");
+			$xPath->registerNamespace('a', "http://schemas.openxmlformats.org/drawingml/2006/main");
+			$xPath->registerNamespace('pic', "http://schemas.openxmlformats.org/drawingml/2006/picture");
+			$xPath->registerNamespace('v', "urn:schemas-microsoft-com:vml");
+			$this->_xPath = $xPath;
+		
+			# This stage gets the appropriate domelements from the document, and passes them into the _parse() / _parseContainer methods
+			foreach ($elements as $node) {
+				switch ($node->nodeName){
+					case 'w:p':
+						if ($node->parentNode->nodeName == 'w:txbxContent') continue;
+						if ($node->parentNode->nodeName == 'w:tc') continue;
+						if ($node->parentNode->parentNode->nodeName == 'w:tc') continue;
+						$parsedArr = $this->_parse($node, 'w:p');
+						if ($parsedArr != null){
+							$this->parsed[] = $parsedArr;
+							$this->_lastPTag = count($this->parsed) - 1;
 						}
-					}
+					break;
+					case 'w:drawing':
+						if ($node->parentNode->nodeName == 'w:txbxContent') continue;
+						if ($node->parentNode->nodeName == 'w:tc') continue;
+						if ($node->parentNode->parentNode->parentNode->nodeName == 'w:tc') continue;
+						$parsedArr = $this->_parse($node, 'w:drawing');
+						if ($parsedArr != null){
+							$this->parsed[] = $parsedArr;
+						}
+					break;
+					case 'w:txbxContent':
+						$parsedArr = $this->_parseContainer($node, 'w:txbxContent');
+						if ($parsedArr != null)
+							$this->parsed[] = $parsedArr;
+					break;
+					case 'w:tbl':
+						$parsedArr = $this->_parseContainer($node, 'w:tbl');
+						if ($parsedArr != null)
+							$this->parsed[] = $parsedArr;
+					break;
 				}
 			}
-			return $indent;
 		}
-		
-		
-		/**
-		 * @name _parseNodeStyle
-		 * @desc Takes a node and returns the nodes set style
-		 * @param domObject $node
-		 * @return string $style - returns '' if no style is found
-		 */
-		protected function _parseNodeStyle($node){			
-			$styleQuery = $this->_xPath->query("w:pPr/w:pStyle", $node);
-			$style = '';
-			foreach ($styleQuery as $styleResult){
-				foreach ($styleResult->attributes as $styleNode){
-					$style = $styleNode->nodeValue;
-					break 2;
-				}
-			}
-			return $style;
-		}
-		
+				
 		protected function _parse($node, $nodeType){
 			$matchedNode = false;
 			$lastParsedNode = null;
@@ -292,7 +307,7 @@
 								$rectNode = $dimensionWrapper;
 					}
 					
-					# Embed an image - images are passed as an array of 'blip' => blipNode, 'rect' => rectNode
+					# Get the imageToUseId by searching the blip node for an id
 					if ($blipNode != null){
 						$blipQuery = $this->_xPath->query("a:blip", $blipNode);
 						foreach ($blipQuery as $blipRes){
@@ -303,18 +318,20 @@
 								}
 							}
 						}
-							
+
+						# Use the id as a key within the _images array
 						$imageData = self::_array_complex_search($this->_images, 'id', $imageToUseId);
 							
 						if (!is_array($imageData)) return null;
 							
-						# Defaults are initally set as 'auto'
+						# If the image doesnt have a width defined, then the image parser skipped on this specific image, so skip it
 						if (!isset($imageData[0]['w'])) return null;
-							
+						
+						# Defaults are initally set as 'auto'
 						$w = $imageData[0]['w'];
 						$h = $imageData[0]['h'];
 							
-						# Load the rect if available to load the image dimensions
+						# Load the rect node if available to load the image dimensions
 						if ($rectNode != null){
 							$rectStyles = $rectNode->attributes;
 							foreach ($rectStyles as $rectStyleNode){
@@ -333,6 +350,8 @@
 							}
 						}
 						$matchedNode = true;
+						
+						# Collate the image into the parsed array
 						$lastParsedNode = array(
 							'type' => 'image',
 							'name' => $imageData[0]['title'],
@@ -348,67 +367,6 @@
 			if (!$matchedNode) $lastParsedNode = null;
 			return $lastParsedNode;
 		}
-		
-		/**
-		 * @name _parseXml
-		 * @desc Converts the raw XML data into a PHP array
-		 */
-		protected function _parseXml(){
-			$dom = new \DOMDocument();
-			$dom->loadXML($this->_rawXml, LIBXML_NOENT | LIBXML_XINCLUDE | LIBXML_NOERROR | LIBXML_NOWARNING);
-			$dom->encoding = $this->encoding;
-			$elements = $dom->getElementsByTagName('*');
-			
-			# Set up xPath for image parsing
-			$xPath = new DOMXPath($dom);
-			$xPath->registerNamespace('mc', "http://schemas.openxmlformats.org/markup-compatibility/2006");
-			$xPath->registerNamespace('wp', "http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing");
-			$xPath->registerNamespace('w', "http://schemas.openxmlformats.org/wordprocessingml/2006/main");
-			$xPath->registerNamespace('a', "http://schemas.openxmlformats.org/drawingml/2006/main");
-			$xPath->registerNamespace('pic', "http://schemas.openxmlformats.org/drawingml/2006/picture");
-			$xPath->registerNamespace('v', "urn:schemas-microsoft-com:vml");
-			$this->_xPath = $xPath;
-			
-			# This stage gets the appropriate domelements from the document, and passes them into the _parse() / _parseContainer methods
-			foreach ($elements as $node) {
-				switch ($node->nodeName){
-					case 'w:p':
-						if ($node->parentNode->nodeName == 'w:txbxContent') continue;
-						if ($node->parentNode->nodeName == 'w:tc') continue;
-						if ($node->parentNode->parentNode->nodeName == 'w:tc') continue;
-						
-						$parsedArr = $this->_parse($node, 'w:p');
-												
-						if ($parsedArr != null){
-							$this->parsed[] = $parsedArr;
-							$this->_lastPTag = count($this->parsed) - 1;
-						}
-					break;
-					case 'w:drawing':
-						if ($node->parentNode->nodeName == 'w:txbxContent') continue;
-						if ($node->parentNode->nodeName == 'w:tc') continue;
-						if ($node->parentNode->parentNode->parentNode->nodeName == 'w:tc') continue;
-						$parsedArr = $this->_parse($node, 'w:drawing');
-						if ($parsedArr != null){
-							$this->parsed[] = $parsedArr;
-						}
-					break;
-					case 'w:txbxContent':
-						$parsedArr = $this->_parseContainer($node, 'w:txbxContent');
-						if ($parsedArr != null)
-							$this->parsed[] = $parsedArr;
-					break;
-					
-					case 'w:tbl':
-						$parsedArr = $this->_parseContainer($node, 'w:tbl');
-						if ($parsedArr != null)
-							$this->parsed[] = $parsedArr;
-					break;
-				}
-			}
-		}
-		
-
 		
 		/**
 		 * @name _parseContainer
@@ -506,25 +464,44 @@
 		}
 		
 		/**
-		 * @name _parseText
-		 * @desc Escapes any entities from the string into html entities, and replaces the placeholders with valid html
-		 * @param string $text
-		 * @return string $processedText
+		 * @name _parseNodeIndent
+		 * @desc Takes a node and returns the nodes set indentation
+		 * @param domObject $node
+		 * @return numeric $indent (or NULL if there is no indent)
 		 */
-		protected function _parseText($text){
-			$text = htmlentities($text, ENT_QUOTES, $this->encoding);
-			if ($this->convertInlineHtml){
-				$text = str_replace(self::$_tabPlaceholder, '<span class="tab_placeholder"></span>', $text);
-				$text = str_replace(self::$_indentPlaceholder, '<span class="indent_placeholder"></span>', $text);
-				$text = str_replace(self::$_italicsPlaceholder, array('<i>', '</i>'), $text);
-				$text = str_replace(self::$_boldPlaceholder, array('<b>', '</b>'), $text);
-				$text = str_replace(self::$_underlinePlaceholder, array('<span class="underline">', '</span>') , $text);
-				$text = str_replace(self::$_hrefPlaceholder, array('<a href="', '">', '</a>'), $text);
+		protected function _parseNodeIndent($node){
+			$indent = null;
+			$indentQuery = $this->_xPath->query("w:pPr/w:ind", $node);
+			foreach ($indentQuery as $indentRes){
+				if ($indentRes->nodeName == 'w:ind'){
+					foreach ($indentRes->attributes as $indentResAttr){
+						if ($indentResAttr->nodeName == 'w:firstLine' || $indentResAttr->nodeName == 'w:left'){
+							$indent = $indentResAttr->nodeValue;
+							break 2;
+						}
+					}
+				}
 			}
-			
-			$processedText = nl2br($text);
-			
-			return $processedText;
+			return $indent;
+		}
+		
+		
+		/**
+		 * @name _parseNodeStyle
+		 * @desc Takes a node and returns the nodes set style
+		 * @param domObject $node
+		 * @return string $style - returns '' if no style is found
+		 */
+		protected function _parseNodeStyle($node){
+			$styleQuery = $this->_xPath->query("w:pPr/w:pStyle", $node);
+			$style = '';
+			foreach ($styleQuery as $styleResult){
+				foreach ($styleResult->attributes as $styleNode){
+					$style = $styleNode->nodeValue;
+					break 2;
+				}
+			}
+			return $style;
 		}
 		
 		/**
@@ -621,6 +598,28 @@
 			}
 						
 			return $text;
+		}
+		
+		/**
+		 * @name _parseText
+		 * @desc Escapes any entities from the string into html entities, and replaces the placeholders with valid html
+		 * @param string $text
+		 * @return string $processedText
+		 */
+		protected function _parseText($text){
+			$text = htmlentities($text, ENT_QUOTES, $this->encoding);
+			if ($this->convertInlineHtml){
+				$text = str_replace(self::$_tabPlaceholder, '<span class="tab_placeholder"></span>', $text);
+				$text = str_replace(self::$_indentPlaceholder, '<span class="indent_placeholder"></span>', $text);
+				$text = str_replace(self::$_italicsPlaceholder, array('<i>', '</i>'), $text);
+				$text = str_replace(self::$_boldPlaceholder, array('<b>', '</b>'), $text);
+				$text = str_replace(self::$_underlinePlaceholder, array('<span class="underline">', '</span>') , $text);
+				$text = str_replace(self::$_hrefPlaceholder, array('<a href="', '">', '</a>'), $text);
+			}
+				
+			$processedText = nl2br($text);
+				
+			return $processedText;
 		}
 				
 		/**
