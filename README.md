@@ -6,11 +6,22 @@ An HTML rendering class is included to demonstrate how you can then manipulate t
 
 ====
 
+Supports:
+- Word styles
+- Paragraphs
+- Text indentation / tabbing
+- Nested lists (&amp; inline lists)
+- Tables
+- Images (&amp; finding the required image size)
+- Hyperlinks
+- Bold / Underlined / Italic text
+
+====
+
 Caveats:
 
 - Images are output at their original resolution, only scaled down so you may want additional processing to resize the images
 - The parser may take some time to run on larger documents
-- Does not support textboxes as of milestone 2
 - Setting a piece of text to the same size &amp; colour as a heading style, is not the same as setting its stylename to 'header'
 
 ====
