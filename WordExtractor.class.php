@@ -42,6 +42,12 @@
 		 */
 		protected $_lastPTag = 0;
 		/**
+		 * @name _currentRowCounter
+		 * @desc Stores the current count of the row within w:p nodes
+		 * @var numeric
+		 */
+		protected $_currentRowCounter = 0;
+		/**
 		 * @name _images
 		 * @desc Stores an array of all images found in the document file
 		 * @var array
@@ -49,7 +55,7 @@
 		protected $_images = array();
 				
 		protected static $_tabPlaceholder = "{[_EXTRACT_TAB_PLACEHOLDER]}";
-		protected static $_indentPlaceholder = "{[_EXTRACT_INDENT_PLACEHOLDER]}";
+		protected static $_indentPlaceholder = array("{[_EXTRACT_INDENT_PLACEHOLDER]}", "{[_EXTRACT_ENDSTYLE_INDENT_PLACEHOLDER]}");
 		protected static $_boldPlaceholder = array('{[_BOLD_OPEN_PLACEHOLDER]}', '{[_BOLD_CLOSE_PLACEHOLDER]}');
 		protected static $_italicsPlaceholder = array('{[_EMPHASIZE_OPEN_PLACEHOLDER]}', '{[_EMPHASIZE_CLOSE_PLACEHOLDER]}');
 		protected static $_underlinePlaceholder = array('{[_UNDERLINE_OPEN_PLACEHOLDER]}', '{[_UNDERLINE_CLOSE_PLACEHOLDER]}');
@@ -218,13 +224,15 @@
 				}
 			}
 		}
-				
+		
 		protected function _parse($node, $nodeType){
 			$matchedNode = false;
 			$lastParsedNode = null;
 			
 			switch ($nodeType){
 				case 'w:p':
+					$this->_currentRowCounter = 0;
+					
 					$this->_curStyle = $this->_parseNodeStyle($node);
 					$this->_curIndent = $this->_parseNodeIndent($node);
 					
@@ -482,6 +490,10 @@
 					}
 				}
 			}
+			if ($indent != null){
+				# Docx stores indentation as 'twips' - twentieths of a pt
+				$indent /= 20;
+			}
 			return $indent;
 		}
 		
@@ -558,7 +570,7 @@
 		 */
 		protected function _parseWR($wrObject, $textPrepend = '', $textAppend = ''){
 			$text = '';
-				
+			
 			# Bold
 			$boldQuery = $this->_xPath->query("w:rPr/w:b", $wrObject);
 			foreach ($boldQuery as $boldRes){
@@ -586,9 +598,11 @@
 				$text .= self::$_tabPlaceholder;
 			}
 			
-			# Indent
-			if ($this->_curIndent != null){
-				$text .= self::$_indentPlaceholder;
+			# Indent - only want to apply this on the first row in the paragraph
+			if ($this->_currentRowCounter == 0){
+				if ($this->_curIndent != null){
+					$text .= self::$_indentPlaceholder[0] . $this->_curIndent . self::$_indentPlaceholder[1];
+				}
 			}
 			
 			# Text
@@ -596,7 +610,9 @@
 			foreach ($textQuery as $textRes){
 				$text .= $textPrepend . $textRes->nodeValue . $textAppend;
 			}
-						
+
+			$this->_currentRowCounter++;
+			
 			return $text;
 		}
 		
@@ -610,7 +626,7 @@
 			$text = htmlentities($text, ENT_QUOTES, $this->encoding);
 			if ($this->convertInlineHtml){
 				$text = str_replace(self::$_tabPlaceholder, '<span class="tab_placeholder"></span>', $text);
-				$text = str_replace(self::$_indentPlaceholder, '<span class="indent_placeholder"></span>', $text);
+				$text = str_replace(self::$_indentPlaceholder, array('<span class="indent_placeholder" style="padding-left:', 'px;"></span>'), $text);
 				$text = str_replace(self::$_italicsPlaceholder, array('<i>', '</i>'), $text);
 				$text = str_replace(self::$_boldPlaceholder, array('<b>', '</b>'), $text);
 				$text = str_replace(self::$_underlinePlaceholder, array('<span class="underline">', '</span>') , $text);
