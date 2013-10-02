@@ -67,6 +67,13 @@
 		 * @desc Used to set the encoding on domdocument objects
 		 */
 		public $encoding = 'utf-8';
+		
+		/**
+		 * @name fileName
+		 * @var string $fileName
+		 * @desc Stores the file name of the extracted docx file
+		 */
+		public $fileName = '';
 				
 		/**
 		 * @name $convertInlineHtml
@@ -77,6 +84,7 @@
 		public $convertInlineHtml = true;
 		
 		public function __construct($fileUri){
+			$this->fileName = basename($fileUri);			
 			$this->wordUri = $fileUri;
 			$this->encoding = 'utf-8';
 			$this->convertInlineHtml = true;
