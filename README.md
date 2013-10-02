@@ -15,6 +15,7 @@ Supports:
 - Images (&amp; finding the required image size)
 - Hyperlinks
 - Bold / Underlined / Italic text
+- Textboxes
 
 ====
 
