@@ -20,9 +20,9 @@ Supports:
 
 Caveats:
 
-- Images are output at their original resolution, only scaled down so you may want additional processing to resize the images
+- Images are displayed at the same dimensions as in word, however the included rendering class does not contain functionality for resizing the raw image files as required (due to it being out of scope for this project)
 - The parser may take some time to run on larger documents
-- Setting a piece of text to the same size &amp; colour as a heading style, is not the same as setting its stylename to 'header'
+- Modifying text in word to look the same as a header style is not the same as setting its stylename to 'header'
 
 ====
 
