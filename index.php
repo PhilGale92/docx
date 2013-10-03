@@ -21,7 +21,23 @@
 		$extract = new WordRender($destinationUri);
 		$extract->extract();
 		$extract->toHtml();
-		echo $extract;
+		$extract->render();
+		
+		# Force download of html
+		$downloadString = $header . $extract->rendered . $footer;
+		
+		header('Content-Description: File Transfer');
+		header('Content-Type: text/html');
+		header('Content-Disposition: attachment; filename="' . $extract->fileName .'"');
+		header('Content-Transfer-Encoding: binary');
+		header('Expires: Mon, 26 Jul 1997 05:00:00 GMT');
+		header('Cache-Control: no-cache');
+		header('Pragma: no-cache');
+		header('Content-Length: ' . strlen($downloadString));
+		ob_clean();
+		flush();
+		echo $downloadString;
+		die;
 	}
 	
 	$contents .= ob_get_clean();

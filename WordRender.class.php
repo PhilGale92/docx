@@ -177,7 +177,7 @@
 		
 		/**
 		 * @name toHtml
-		 * @desc Takes $this->parsed and converts the parsed docx file into a full string of html
+		 * @desc Takes $this->parsed and converts the parsed docx file into an interative array of html, while preparing list items for a final stage of parsing
 		 */
 		public function toHtml(){
 			$htmlArray = array();
