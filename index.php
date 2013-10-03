@@ -28,7 +28,7 @@
 		
 		header('Content-Description: File Transfer');
 		header('Content-Type: text/html');
-		header('Content-Disposition: attachment; filename="' . $extract->fileName .'"');
+		header('Content-Disposition: attachment; filename="' . $extract->fileName .'.html"');
 		header('Content-Transfer-Encoding: binary');
 		header('Expires: Mon, 26 Jul 1997 05:00:00 GMT');
 		header('Cache-Control: no-cache');
