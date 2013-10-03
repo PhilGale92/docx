@@ -100,7 +100,6 @@
 		
 		public function extract(){
 			$this->_getXmlDump();
-			$this->_matchImages();
 			$this->_parseXml();
 		}
 		
@@ -108,11 +107,11 @@
 		/**
 		 * @name _getXmlDump
 		 * @desc Takes a file URI of a docx file, and extracts the structure by unzipping it and retriving the contents of document.xml
-		 * @return boolean ($this->_rawXml)
+		 * @return string $this->_rawXml, string $this->_imageMatching, array $this->_images
 		 */
 		protected function _getXmlDump(){
-			$content = '';
-			$imageMatching = '';
+			$xmlStructure = '';
+			$imageRelationships = '';
 			
 			$zip = zip_open($this->wordUri);
 			if (!$zip || is_numeric($zip)) return false;
@@ -135,30 +134,25 @@
 				
 				# document.xml.refs supplies relationships of Id's to image url's
 				if ($entryName == 'word/_rels/document.xml.rels'){
-					$imageMatching = zip_entry_read($zip_entry, zip_entry_filesize($zip_entry));
+					$imageRelationships = zip_entry_read($zip_entry, zip_entry_filesize($zip_entry));
 				}
 				
 				# document.xml contains all the content & structure of the file
 				if ($entryName == "word/document.xml"){
-					$content = zip_entry_read($zip_entry, zip_entry_filesize($zip_entry));
+					$xmlStructure = zip_entry_read($zip_entry, zip_entry_filesize($zip_entry));
 				}
 				
 				zip_entry_close($zip_entry);
 			}
 			zip_close($zip);
+			
+			$this->_rawXml = $xmlStructure;
 			$this->_images = $imageData;
-			$this->_rawXml = $content;
-			$this->_imageMatching = $imageMatching;
-		}
-		
-		/**
-		 * @name _matchImages
-		 * @desc This method uses $this->imageMatching to pull the correct image files into the document structure
-		 */
-		protected function _matchImages(){
-			if ($this->_imageMatching != ''){
+			
+			# This segment uses $imageRelationships to pull the correct image files into the document structure and modify $_images[$key]['id'] = CorrectValue
+			if ($imageRelationships != ''){
 				$dom = new \DOMDocument();
-				$dom->loadXML($this->_imageMatching, LIBXML_NOENT | LIBXML_XINCLUDE | LIBXML_NOERROR | LIBXML_NOWARNING);
+				$dom->loadXML($imageRelationships, LIBXML_NOENT | LIBXML_XINCLUDE | LIBXML_NOERROR | LIBXML_NOWARNING);
 				$dom->encoding = $this->encoding;
 				$elements = $dom->getElementsByTagName('*');
 				foreach ($elements as $node) {
@@ -176,7 +170,7 @@
 				}
 			}
 		}
-		
+				
 		/**
 		 * @name _parseXml
 		 * @desc Converts the raw XML data into a PHP array
@@ -233,6 +227,13 @@
 			}
 		}
 		
+		/**
+		 * @name _parse
+		 * @param $node domElement
+		 * @param $nodeType string
+		 * @desc Parses a domElement depending on its type
+		 * @return $lastParsedNode array
+		 */
 		protected function _parse($node, $nodeType){
 			$matchedNode = false;
 			$lastParsedNode = null;
