@@ -107,7 +107,7 @@
 		/**
 		 * @name _getXmlDump
 		 * @desc Takes a file URI of a docx file, and extracts the structure by unzipping it and retriving the contents of document.xml
-		 * @return string $this->_rawXml, string $this->_imageMatching, array $this->_images
+		 * @return string $this->_rawXml, array $this->_images
 		 */
 		protected function _getXmlDump(){
 			$xmlStructure = '';
