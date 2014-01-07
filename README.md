@@ -11,7 +11,7 @@ Supports:
 - Paragraphs
 - Text indentation / tabbing
 - Nested lists (&amp; inline lists)
-- Tables
+- Tables (Vertical cell merging + colspans)
 - Images (&amp; finding the required image size)
 - Hyperlinks
 - Bold / Underlined / Italic text
@@ -29,5 +29,5 @@ Caveats:
 
 Requirements:
 
-- PHP 5.2 or greater
+- PHP 5.3 or greater
 - /tmp writable by PHP
