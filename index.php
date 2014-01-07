@@ -1,47 +1,68 @@
-<?php
+<?php 
+	define("DIR_SEP", DIRECTORY_SEPARATOR);
+	$absRoot = __DIR__ . DIR_SEP;
 	require_once('html.tpl.php');
-	require_once('WordExtractor.class.php');
-	require_once('WordRender.class.php');
-	
-	$contents .= '<form action="" method="post" enctype="multipart/form-data"> ';
-	$contents .= '<fieldset>';
-	$contents .= '<input type="file" name="upload_file" id="upload_file" />';
-	$contents .= '<br/><input type="submit" value="Submit" />';
-	$contents .= '</fieldset>';
-	$contents .= '</form>';
-	
+	require_once('functions.php');
+	require_once('krumo/class.krumo.php');
+	require_once('Docx/Docx.class.php');
+	require_once('Docx/Node.class.php');
+	require_once('Docx/Style.class.php');
 	ob_start();
-	if (isset($_FILES['upload_file'])){
-		$uploadedFileName = $_FILES['upload_file']['name'];
-		if (substr($uploadedFileName, -4) != 'docx') die('invalid file ext. (needs docx)');
-		
-		$destinationUri = __DIR__ . '/tmp/' . $uploadedFileName;
-		move_uploaded_file($_FILES['upload_file']['tmp_name'], $destinationUri);
-		
-		$extract = new WordRender($destinationUri);
-		$extract->extract();
-		$extract->toHtml();
-		$extract->render();
-		
-		# Force download of html
-		$downloadString = $header . $extract->rendered . $footer;
-		
-		header('Content-Description: File Transfer');
-		header('Content-Type: text/html');
-		header('Content-Disposition: attachment; filename="' . $extract->fileName .'.html"');
-		header('Content-Transfer-Encoding: binary');
-		header('Expires: Mon, 26 Jul 1997 05:00:00 GMT');
-		header('Cache-Control: no-cache');
-		header('Pragma: no-cache');
-		header('Content-Length: ' . strlen($downloadString));
-		ob_clean();
-		flush();
-		echo $downloadString;
-		die;
+	
+	$showForm = true;
+	if (isset($_POST['word_submit'])){
+		if (isset($_FILES['word_file']['name'])){
+			$fileName = $_FILES['word_file']['name'];
+			if (substr($fileName, -5) == '.docx'){
+				$fileUri = $absRoot . 'tmp' . DIR_SEP . $fileName;
+				move_uploaded_file($_FILES['word_file']['tmp_name'], $fileUri);
+				
+				# GPUpdate Style Abstraction
+				$chapterHeading = new Docx\Style('0ChapterHeading', array('htmlTag' => 'h1', 'htmlClass' => 'chapter_heading'));
+				$contentsTopicHeader = new Docx\Style('C1ContentsPageTopicHeader', array('htmlTag' => 'h3', 'htmlClass' => 'topic_header'));
+				$contentsPageSubHeader = new Docx\Style('C2ContentsPageSubheading', array('htmlTag' => 'h4', 'htmlClass' => 'sub_heading'));
+				$topicHeading = new Docx\Style('1TopicHeading', array('htmlTag' => 'h2', 'htmlClass' => 'topic_heading', 'addHtmlId' => true));
+				$subHeading1 = new Docx\Style('2SubHeading1', array('htmlTag' => 'h4', 'htmlClass' => 'sub_heading_1', 'addHtmlId' => true, 'passUnderNextStyle' => 'topic_heading'));
+				$subHeading2 = new Docx\Style('3SubHeading2', array('htmlTag' => 'h4', 'htmlClass' => 'sub_heading_2'));
+				$subHeading3 = new Docx\Style('4SubHeading3', array('htmlTag' => 'h4', 'htmlClass' => 'sub_heading_3'));
+				$firstLevelBullet = new Docx\Style('8FirstLevelBullet', array('listLevel' => 1));
+				$firstLevelBulletItalic = new Docx\Style('9FirstLevelBulletItalic', array('htmlClass' => 'italic', 'listLevel' => 1));
+				$firstLevelBulletBold = new Docx\Style('10FirstLevelBulletBold', array('htmlClass' => 'bold', 'listLevel' => 1));
+				$secondLevelBullet = new Docx\Style('11SecondLevelBullet', array('listLevel' => 2));
+				$secondLevelBulletItalic = new Docx\Style('12SecondLevelBulletItalic', array('htmlClass' => 'italic', 'listLevel' => 2));
+				$secondLevelBulletBold = new Docx\Style('13SecondLevelBulletBold', array('htmlClass' => 'bold', 'listLevel' => 2));
+				
+				# Parse
+				$parser = new Docx\Docx($fileUri, $fileName);
+				$parser::$storageLinkClass = 'subtopic_link';
+				$parser->import()
+					->attachStyles($chapterHeading, $contentsTopicHeader, $contentsPageSubHeader, $topicHeading, $subHeading1, $subHeading2, $subHeading3, $bodyCopy, $bodyCopyItalic, $bodyCopyBold)
+					->attachStyles($firstLevelBullet, $firstLevelBulletItalic, $firstLevelBulletBold, $secondLevelBullet, $secondLevelBulletItalic, $secondLevelBulletBold)
+					->getNodes()
+					->parseLists()
+					->parseNodes()
+					->render()
+				;
+				echo $parser->html;
+				
+			#	var_dump($parser);
+				
+				$showForm = false;
+			} else echo 'Docx file extension only';
+		}
 	}
 	
-	$contents .= ob_get_clean();
+	if ($showForm){
+		echo '<h1>Docx Parser</h1>';
+		echo '<form enctype="multipart/form-data" action="" method="post">';
+			echo '<label for="word_file">Upload .docx file here</label><br/>';
+			echo '<input type="file" name="word_file" /><br/><br/>';
+			echo '<input type="submit" name="word_submit" value="Upload" />';
+		echo '</form>';
+	}
+	
+	$contents = ob_get_clean();
 	
 	echo $header;
-	echo $contents;
+		echo $contents;
 	echo $footer;

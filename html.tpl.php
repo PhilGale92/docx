@@ -1,26 +1,31 @@
 <?php
 	ob_start();
-?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+?><!doctype html>
+<html>
 <head>
-	<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-	<title>Word Extractor</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+	<title>Docx Parser</title>
 	<style type="text/css">
-		.indent_placeholder, .tab_placeholder { display:inline-block; padding-left:20px; } 
-		.clear { clear:both;} 
-		span.underline { text-decoration:underline; }
-		div.textbox { display:block; width:250px; border:1px solid #000; padding:10px; margin:20px; float:left;}
+		table { border-collapse:collapse;} 
+		th {    text-align: left;
+    text-transform: none;}
+		td, th { 
+			vertical-align:top;
+			background-clip:padding-box;
+		    border:1px solid #000000;
+		    color: #414042;
+		    height: 34px;
+		    padding-left: 6px;
+		    position: relative;
+ 	   }
+ 	   td.has_subcell  {padding-left:0;}
+		table table { width:100%; }
+		td td { height:72px;  border:none; border-bottom:1px solid black; min-width:110px;} 
+		td table tr:last-of-type td { border-bottom:0;}
+		.vmerge td {  }
+		span.indent { padding-left:36px;} 
 	</style>
 </head>
-<body>
-	<div id="page_wrapper">
-		<div class="inner">
-	<?php
-	$header = ob_get_clean();
-	
-	ob_start(); ?>
-</div></div>
-</body></html>
-	<?php
-	$footer = ob_get_clean();
-	$contents = '';
+<body><?php $header = ob_get_clean(); ob_start(); ?>
+</body>
+</html><?php  $footer = ob_get_clean(); ?>
