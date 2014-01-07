@@ -22,6 +22,7 @@
 			public $prepend = '';
 			public $addEmptyTableCells = true;
 			private $_tableId = 0;
+			public static $counter = -1;
 			
 			/**
 			 * @name _generateNodeId
@@ -29,10 +30,10 @@
 			 * @return number
 			 */
 			private static function _generateNodeId(){
-				static $counter = -1;
-				$counter++;
-				return $counter;
+				self::$counter++;
+				return self::$counter;
 			}
+			
 			
 			/**
 			 * @name buildHtmlId

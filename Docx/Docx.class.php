@@ -20,6 +20,7 @@
 			public function __construct($fileUri, $fileName){
 				$this->fileName = $fileName;
 				$this->wordUri = $fileUri;
+				Node::$counter = -1;
 			}
 			
 			/**
