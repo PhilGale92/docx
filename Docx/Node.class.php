@@ -91,6 +91,7 @@
 				if ($runStyleQuery->length != 0){
 					$runStyleNode = $runStyleQuery->item(0);
 					foreach ($runStyleNode->childNodes as $styleSub){
+						
 						switch ($styleSub->nodeName){
 							case 'w:i':
 								$italic = true;
@@ -99,7 +100,10 @@
 								$bold = true;
 							break;
 							case 'w:u':
-								$underline = true;
+								$underAttr = $styleSub->getAttribute('w:val');
+								if ($underAttr == 'single'){
+									$underline = true;
+								}
 							break;
 						}
 					}
