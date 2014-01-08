@@ -177,7 +177,12 @@
 							
 							# If we have the raw hyperlink, parse it
 							if ($hyperlink != ''){
-								if (substr($hyperlink, 0, 4) != 'http') $modHyperlink = 'http://' . $hyperlink; else $modHyperlink = $hyperlink;
+								if (substr($hyperlink, 0, 4) != 'http'){
+									if (strpos($hyperlink, '@') !== false){
+										$modHyperlink = 'mailto:' . $hyperlink;
+									} else	
+										$modHyperlink = 'http://' . $hyperlink; 
+								} else $modHyperlink = $hyperlink;
 								
 								$this->run[] = array(
 									'text' => '<a href="' . $modHyperlink . '">' . $hyperlink . '</a>',
