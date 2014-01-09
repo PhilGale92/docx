@@ -2,7 +2,7 @@ Docx Parser
 ====
 
 This PHP based parser takes any docx file, and creates a PHP array containing its structure, content &amp; style information.
-An HTML rendering class is included to demonstrate how you can then manipulate the array into different formats.
+Simply import any style data (as demonstrated within index.php) using the word style name & any desired attributes and run the parser.
 
 ====
 
@@ -13,9 +13,10 @@ Supports:
 - Nested lists (&amp; inline lists)
 - Tables (Vertical cell merging + colspans)
 - Images (&amp; finding the required image size)
-- Hyperlinks
+- Hyperlinks (With mailto: support)
 - Bold / Underlined / Italic text
-- Textboxes
+- Textboxes (Parser support added, but not rendered)
+- Table of content functionality (You likely need to extend the docx class & modify the ->render() class)
 
 ====
 
