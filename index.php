@@ -36,7 +36,7 @@
 				$parser = new Docx\Docx($fileUri, $fileName);
 				$parser::$storageLinkClass = 'subtopic_link';
 				$parser->import()
-					->attachStyles($chapterHeading, $contentsTopicHeader, $contentsPageSubHeader, $topicHeading, $subHeading1, $subHeading2, $subHeading3, $bodyCopy, $bodyCopyItalic, $bodyCopyBold)
+					->attachStyles($chapterHeading, $contentsTopicHeader, $contentsPageSubHeader, $topicHeading, $subHeading1, $subHeading2, $subHeading3)
 					->attachStyles($firstLevelBullet, $firstLevelBulletItalic, $firstLevelBulletBold, $secondLevelBullet, $secondLevelBulletItalic, $secondLevelBulletBold)
 					->getNodes()
 					->parseLists()
