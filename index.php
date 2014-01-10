@@ -17,7 +17,7 @@
 				$fileUri = $absRoot . 'tmp' . DIR_SEP . $fileName;
 				move_uploaded_file($_FILES['word_file']['tmp_name'], $fileUri);
 				
-				# GPUpdate Style Abstraction
+				# Style abstraction
 				$chapterHeading = new Docx\Style('0ChapterHeading', array('htmlTag' => 'h1', 'htmlClass' => 'chapter_heading'));
 				$contentsTopicHeader = new Docx\Style('C1ContentsPageTopicHeader', array('htmlTag' => 'h3', 'htmlClass' => 'topic_header'));
 				$contentsPageSubHeader = new Docx\Style('C2ContentsPageSubheading', array('htmlTag' => 'h4', 'htmlClass' => 'sub_heading'));
