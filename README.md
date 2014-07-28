@@ -20,6 +20,30 @@ Supports:
 
 ====
 
+Known Bugs:
+
+- Tables cells that us  the following pattern don't render properly:
+
+Cell 1 | 
+Cell 2 | 
+_ _ _  | 
+Cell 3 | 
+Cell 4 | 
+
+Cell 1 + 2 are vertically merged. Then there is a border, cell 3 + 4 are merged. The renderer cannot differentiate between multiple vertical merges that don't have a standard cell between them. 
+
+The following layout is fine, as cell 3 is a standard cell dividing the two vertical merges:
+
+Cell 1 | 
+Cell 2 | 
+_ _ _  | 
+Cell 3 | 
+_ _ _  |
+Cell 3 | 
+Cell 4 | 
+
+====
+
 Caveats:
 
 - Images are displayed at the same dimensions as in word, however the included rendering class does not contain functionality for resizing the raw image files as required (due to it being out of scope for this project)
