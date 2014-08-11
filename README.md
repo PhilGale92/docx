@@ -31,8 +31,6 @@ Known Bugs:
 |--------|
 | cell 3 |
 | cell 4 |
-|        |
-|        |
 
 Cell 1 + 2 are vertically merged. Then there is a border, cell 3 + 4 are merged. The renderer cannot differentiate between multiple vertical merges that don't have a standard cell between them. 
 
