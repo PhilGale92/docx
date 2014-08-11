@@ -24,6 +24,8 @@ Known Bugs:
 
 - Tables cells that us  the following pattern don't render properly:
 
+| Example (incorrect render)|
+| ------------- |
 | cell 1 |
 | cell 2 |
 |--------|
@@ -36,6 +38,8 @@ Cell 1 + 2 are vertically merged. Then there is a border, cell 3 + 4 are merged.
 
 The following layout is fine, as cell 3 is a standard cell dividing the two vertical merges:
 
+| Example (works)|
+| ------------- |
 | cell 1 |
 | cell 2 |
 |--------|
@@ -43,8 +47,6 @@ The following layout is fine, as cell 3 is a standard cell dividing the two vert
 |--------|
 | cell 4 |
 | cell 5 |
-|        |
-|        |
 
 ====
 
