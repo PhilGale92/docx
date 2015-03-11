@@ -17,7 +17,9 @@
 			protected $_passUnderStorage = array();
 			protected $_currentPassUnderKey = null;
 			
-			public function __construct($fileUri, $fileName){
+			public function __construct($fileUri, $fileName, $disableExternalEntities = true){
+				libxml_disable_entity_loader($disableExternalEntities ) ;
+				
 				$this->fileName = $fileName;
 				$this->wordUri = $fileUri;
 				Node::$counter = -1;
