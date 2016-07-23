@@ -3,7 +3,6 @@
 	$absRoot = __DIR__ . DIR_SEP;
 	require_once('html.tpl.php');
 	require_once('functions.php');
-	require_once('krumo/class.krumo.php');
 	require_once('Docx/Docx.class.php');
 	require_once('Docx/Node.class.php');
 	require_once('Docx/Style.class.php');
