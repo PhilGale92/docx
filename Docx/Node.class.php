@@ -83,6 +83,7 @@
 				$italic = false;
 				$tab = false;
 				$underline = false;
+				$isSuperScript = $isSubScript = false ;
 				$text = '';
 				
 				$runStyleQuery = $this->xPath->query("w:rPr", $wr);
@@ -91,8 +92,15 @@
 				if ($runStyleQuery->length != 0){
 					$runStyleNode = $runStyleQuery->item(0);
 					foreach ($runStyleNode->childNodes as $styleSub){
-						
+
 						switch ($styleSub->nodeName){
+							case 'w:vertAlign':
+								$vertAttrib = $styleSub->getAttribute('w:val');
+								if ($vertAttrib == 'superscript') 
+									$isSuperScript = true;
+								else if ($vertAttrib == 'subscript')
+									$isSubScript = true; 
+							break;
 							case 'w:i':
 								$italic = true;
 							break;
@@ -125,6 +133,8 @@
 					'bold' => $bold,
 					'italic' => $italic,
 					'tab' => $tab,
+					'subscript' => $isSubScript,
+					'superscript' => $isSuperScript,
 					'underline' => $underline,
 					'text' => $text
 				);
@@ -189,6 +199,8 @@
 								$this->run[] = array(
 									'text' => '<a href="' . $modHyperlink . '">' . $hyperlink . '</a>',
 									'underline' => false,
+									'subscript' => false,
+									'superscript' => false,
 									'tab' => false,
 									'italic' => false,
 									'bold' => false

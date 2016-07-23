@@ -250,6 +250,10 @@
 								if ($runArr['bold']){ $runPrepend = '<b>' . $runPrepend; $runAppend .= '</b>';}
 								if ($runArr['underline']){ $runPrepend = '<u>' . $runPrepend; $runAppend .= '</u>';}
 								if ($runArr['italic']){ $runPrepend = '<i>' . $runPrepend; $runAppend .= '</i>';}
+								
+								if ($runArr['superscript']){ $runPrepend = '<sup>' . $runPrepend; $runAppend .= '</sup>';}
+								if ($runArr['subscript']){ $runPrepend = '<sub>' . $runPrepend; $runAppend .= '</sub>';}
+								
 								if ($runArr['tab'] == true) $runArr['text'] = '<span class="tab"></span>' . $runArr['text'];
 								
 								$html .= $runPrepend . $runArr['text'] . $runAppend;
