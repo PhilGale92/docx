@@ -44,7 +44,8 @@
 			 */
 			public static function buildHtmlId($string, $wordStyleObject){
 				$string = 'docx_' . $string;
-				$string = str_replace(" ", "_", $string);
+				$string = str_replace(array('&nbsp;'), "", $string);
+				$string = str_replace(array(" "), "_", $string);
 				$string = trim(strip_tags($string));
 				$string = preg_replace("/[^A-Za-z0-9_]/", '', $string);
 				return $string;
@@ -278,19 +279,32 @@
 			 * @param DOMELEMENT $domNode
 			 */
 			public function createTableGrid($domNode){
+				error_reporting(0);
 				# Stage 1 - get the maxColumnCount using gridCol
 				$maxColumnCount = $this->xPath->query("w:tblGrid/w:gridCol", $domNode)->length;
 				
 				# Stage 2 - Start a loop for each table row + cell to compile cell structure info
 				$tableArr = array();
 				$tableRowsDom = $this->xPath->query("w:tr", $domNode);
+
 				foreach ($tableRowsDom as $i => $tableRowDom){
 					$rowCellsDom = $this->xPath->query("w:tc", $tableRowDom);
 					foreach ($rowCellsDom as $ii => $cellDom){
+
+						$vMergeRestartAttr = false;
+						
 						# Vertical Merge
-						if ($this->xPath->query("w:tcPr/w:vMerge", $cellDom)->length == 1)
+						if ($this->xPath->query("w:tcPr/w:vMerge", $cellDom)->length == 1){
 							$cellVerticalMerge = true;
-						else
+							
+							$vMergeDomAttr = $this->xPath->query("w:tcPr/w:vMerge", $cellDom)->item(0)->attributes;
+							$baseAttr = $vMergeDomAttr->item(0);
+							if (isset($baseAttr->nodeValue)){
+								if ($vMergeDomAttr->item(0)->nodeValue == 'restart'){
+									$vMergeRestartAttr = true;
+								}
+							}
+						} else
 							$cellVerticalMerge = false;
 						
 						# Cell Colspan
@@ -300,20 +314,25 @@
 							$colSpan = (int) $gridSpanDom->item(0)->getAttribute('w:val');
 						
 						if (!isset($tableArr[$i])) $tableArr[$i] = array();
-						
+
 						$tableArr[$i][$ii] = array(
 							'dom' => $cellDom,
+							'verticalMergeRestartAttr' => $vMergeRestartAttr,
 							'verticalMerge' => $cellVerticalMerge,
 							'colSpan' => $colSpan
 						);
 						
 					}
 				}
-				
+
+
 				# Stage 3 - Compile the vertical merge cells & apply the colspan variable to vertical merging
 				$vMergeIndex = array();
+				$vMergeRestartCache = array();
 				foreach ($tableArr as $i => $tableRow){
 					foreach ($tableRow as $ii => $tableCell){
+						if ($tableCell['verticalMergeRestartAttr'] == true)
+							$vMergeRestartCache[$i] = $tableCell['verticalMergeRestartAttr'];
 						$vMergeIndex[$i][$ii] = $tableCell['verticalMerge'];
 						if ($tableCell['colSpan']){
 							for ($loopI = $ii; $loopI < ($tableCell['colSpan'] - $ii); $loopI++){
@@ -326,28 +345,36 @@
 				# Stage 4 - Compile the TRUE/FALSE declarations into a count of Td's
 				# Create the required height caches, to help track vertical merging
 				$mergeCache = array();
-				for ($i = 0; $i < $maxColumnCount; $i++){
+				for ($i = 0; $i < $maxColumnCount; $i++)
 					$mergeCache[$i] = null;
-					$heightCache[$i] = null;
-				}
 				
 				$vMergeIndex = array_reverse($vMergeIndex, true);
 				$verticalMergingColCounts = array();
 				foreach ($vMergeIndex as $i => $tableRow){
-					foreach ($tableRow as $ii => $tableCellIsVMerge){
-						if ($tableCellIsVMerge){
-							if ($mergeCache[$ii] != null) $mergeCache[$ii]++; else $mergeCache[$ii] = 1;
-							if (!$vMergeIndex[$i - 1][$ii]) $verticalMergingColCounts[$i][$ii] = $mergeCache[$ii];
+					$vmergeRestart = $vMergeRestartCache[$i];
+					foreach ($tableRow as $ii => $tableCellIsVMerge){						
+						if ($vmergeRestart == true){
+							 $verticalMergingColCounts[$i ][$ii ] = $mergeCache[$ii] ;
+							 $mergeCache[$ii] = 1;
 						} else {
-							$mergeCache[$ii] = null;
-							$verticalMergingColCounts[$i][$ii] = 1;
+							if ($tableCellIsVMerge){
+								if ($mergeCache[$ii] != null){
+									$mergeCache[$ii]++; 
+								} else {
+									$mergeCache[$ii] = 1;
+								}
+								if (!$vMergeIndex[$i - 1][$ii]) $verticalMergingColCounts[$i][$ii] = $mergeCache[$ii];
+							} else {
+								$mergeCache[$ii] = 1;
+								$verticalMergingColCounts[$i][$ii] = 1;
+							}
 						}
 					}
 				}
 				
 				$verticalMergingColCounts = array_reverse($verticalMergingColCounts, true);
-				
-				# Stage 5 - Invert how the cell-heights are stored, due to how HTML handles tables differently then docx structures
+
+				# Stage 5 - Invert how the cell heights are stored, due to how HTML handles tables differently then docx structures
 				# - Html has small cells merged vertically, html has large cells with subcells
 				$skipRow = 0;
 				foreach ($verticalMergingColCounts as $i => &$row){
@@ -357,59 +384,70 @@
 							$currentMaxHeight = $cellHeight;
 						}
 					}
-									
 					if ($skipRow > 0){ $skipRow--; unset($verticalMergingColCounts[$i]); continue; }
 					if ($skipRow == 0)
 						$skipRow = $currentMaxHeight - 1;
-					foreach ($row as $ii => &$cellHeight){
-						if ($heightCache[$ii] > 1){
-							$heightCache[$ii]--;
-						}
 						
-						if ($cellHeight == 1){
-							$cellHeight = $currentMaxHeight;
-						} else {
-							$heightCache[$ii] = $cellHeight ;
-							$cellHeight = 1;
-						}
+					$maxSub = 1;
+					foreach ($row as $ii => &$cell){
+						if ($cell >= $currentMaxHeight)
+							$cell = 1;
+						else
+							$cell = $currentMaxHeight;
 					}
-					
-					if ($this->addEmptyTableCells){
-						for ($loopI = $ii; $loopI < $maxColumnCount; $loopI++)
-							$row[$loopI] = 1;
-					}
-
 				}
-				
+
 				# Stage 6 - Compile the Td's into a single tabular array using the $verticalMergingColCounts
 				$renderTable = array();
+
 				foreach ($verticalMergingColCounts as $i => $row){
 					$skipCount = -1;
-					foreach ($row as $ii => $cellHeight){
+
+                    foreach ($row as $ii => $cellHeight){
 						if ($skipCount > 0){
 							$skipCount--;
 							continue;
 						}
 						
-						if ($cellHeight == 1) $renderTable[$i][$ii] = $tableArr[$i][$ii]; else {
+						if ($cellHeight == 1)
+							@$renderTable[$i][$ii] = $tableArr[$i][$ii];
+						else {
 							for ($cellInt = 1; $cellInt <= $cellHeight; $cellInt++){
-								$renderTable[$i][$ii][] = $tableArr[$i + $cellInt - 1][$ii];
+								@$renderTable[$i][$ii][] = $tableArr[$i + $cellInt - 1][$ii];
 							}
 						}
-						
-						# Skip colspan cells
-						if ($tableArr[$i][$ii]['colSpan'] > 1){
-							for ($loopI = $ii; $loopI < ($tableArr[$i][$ii]['colSpan'] - $ii); $loopI++){
-								$skipCount++;
-							}
-						}
-
 					}
 				}
-				
+
+                # Stage 6b - Strip unwanted cells out
+				foreach ($renderTable as $i => $rowXV ) {
+				    $rowSpacer = 0 ;
+				    $bColSpansUsed = false ;
+				    $startI = 0 ;
+                    $mergedCellCount = 0 ;
+                    foreach ($rowXV as $ii => $cellXV ) {
+                        if ($cellXV['colSpan'] > 1) $bColSpansUsed = true;
+                        $rowSpacer += $cellXV['colSpan'];
+                        if ($cellXV != null ) $startI = $ii;
+                    }
+
+                    if ($bColSpansUsed ) {
+                        $maxI = count($rowXV) + $mergedCellCount;
+                        for ($loopI = $maxI; $loopI > ($maxI - $rowSpacer); $loopI--) {
+                            if ($startI == $loopI ) break ;
+                            unset($renderTable[$i][$loopI]);
+                        }
+                    }
+                }
+
+
 				# Stage 7 - Write the HTML (Tokenize where the contents of the table can be inserted)
-				$html = '<table>';
+				$html = '<table class="col_count_' . $maxColumnCount . '">';
+
 				foreach ($renderTable as $i => $row){
+				    /**
+                     * @ 30/09/2016 - we do not apparently want to auto-detect headings - just default them out
+                     *
 					if ($i == 0) {
 						$headerStr = ' class="headers"';
 						$cellTag = 'th';
@@ -417,42 +455,78 @@
 						$headerStr = '';
 						$cellTag = 'td';
 					}
+				    **/
+                    $headerStr = '';
+                    $cellTag = 'td';
 					
 					$html .= '<tr' . $headerStr . '>';
+					$insertTds = $maxColumnCount - 1;
 					foreach ($row as $ii => $cell){
 						
 						$colSpanStr = '';
+						$colSpanClass = '';
+
+						$subCellMaxSpan = 1 ;
+						if (isset($cell[0])){
+						    foreach ($cell as $xi => $subCell){
+                                if ($subCell['colSpan'] > 1){
+                                    $insertTds = $insertTds - $subCell['colSpan'] ;
+                                    if ($subCell['colSpan'] > $subCellMaxSpan) $subCellMaxSpan = $subCell['colSpan'];
+                                }
+                            }
+                        }
+
 						if (isset($cell['colSpan'])){
 							if ($cell['colSpan'] > 1){
 								$colSpanStr = ' colspan="' . $cell['colSpan'] . '"';
+								$colSpanClass .= ' has_colspan';
 							}
-						}
+							$insertTds = $insertTds - $cell['colSpan'];
+						} else $insertTds--;
+
+						if ($subCellMaxSpan > 1 ){
+                            $colSpanStr = ' colspan="' . $subCellMaxSpan . '"';
+                            $colSpanClass .= ' has_colspan';
+                        }
+						
 						
 						$subcellClassStr = '';
-						if (isset($cell[0])) $subcellClassStr = ' has_subcell '; 
-						
-						$html .= '<' . $cellTag . ' class="col_' . ($ii + 1) . $subcellClassStr . '"' . $colSpanStr . '>';
+						if (isset($cell[0])) $subcellClassStr = ' has_subcell ';
+                        $cellHtml = '';
+
 						if (isset($cell[0])){
 							# Sub cell within cell
-							$html .= '<table>';
-							$cellCount = count($cell);
+                            $cellHtml .= '<table>';
 							foreach ($cell as $iii => $subCell){
 								# Dont render an empty subcell
 								$contentCheck = $this->xPath->query("w:p/w:r", $subCell['dom']);
 								if ($contentCheck->length == 0)
 									continue;
-								
-								$html .= '<tr class="vmerge merge_' . $ii  . '_' . $iii . '"><td>';
-								$html .= $this->_renderCell($subCell['dom']);
-								$html .= '</td></tr>';
+
+
+                                $cellHtml .= '<tr class="vmerge merge_' . $ii  . '_' . $iii . '">
+								    <td>';
+                                 $cellHtml .= $this->_renderCell($subCell['dom']);
+                                $cellHtml .= '</td>
+                                    </tr>';
 							}
-							$html .= '</table>';
+                            $cellHtml .= '</table>';
 						} else {
 							# Standard cell
-							$html .= $this->_renderCell($cell['dom']);
+                            $cellHtml .= $this->_renderCell($cell['dom']);
 						}
+
+
+                        $cellTagInit = '<' . $cellTag . ' class="col_' . ($ii + 1) . $subcellClassStr . $colSpanClass .  '" ' . $colSpanStr . '>';
+                        $html .= $cellTagInit;
+						$html .= $cellHtml;
 						$html .= '</' . $cellTag . '>';
 					}
+					
+					for ($loopI = 0; $loopI <= $insertTds; $loopI++){
+						$html .= '<td></td>';
+					}
+					
 					$html .= '</tr>';
 				}
 				$html .= '</table>';
