@@ -178,44 +178,49 @@
 							if ($styleInfo->listLevel > 0) $listLevel = $styleInfo->listLevel;
 						}
 						
-						# Load hyperlink data (if any)
-						$hyperQuery = $this->xPath->query("w:hyperlink", $this->dom);
-						if ($hyperQuery->length > 0){
-							$hyperlink = '';
-							$hyperNode = $hyperQuery->item(0);
-							foreach ($hyperNode->childNodes as $cn){
-								if ($cn->nodeName == 'w:r')
-									$hyperlink = $cn->nodeValue;
-							}
-							
-							# If we have the raw hyperlink, parse it
-							if ($hyperlink != ''){
-								if (substr($hyperlink, 0, 4) != 'http'){
-									if (strpos($hyperlink, '@') !== false){
-										$modHyperlink = 'mailto:' . $hyperlink;
-									} else	
-										$modHyperlink = 'http://' . $hyperlink; 
-								} else $modHyperlink = $hyperlink;
-								
-								$this->run[] = array(
-									'text' => '<a href="' . $modHyperlink . '">' . $hyperlink . '</a>',
-									'underline' => false,
-									'subscript' => false,
-									'superscript' => false,
-									'tab' => false,
-									'italic' => false,
-									'bold' => false
-								);
-							}
-						}
-						
-						# Join the different runs together
-						$textRun = $this->xPath->query("w:r", $this->dom);
-						$text = '';
-						foreach ($textRun as $run){
-							$wrArray = $this->_parseWrNode($run);
-							$this->run[] = $wrArray;
-						};
+						# Run through text runs & hyperlinks
+						foreach ($this->dom->childNodes as $childNode){
+						    $nodeName = $childNode->nodeName;
+                            switch ($nodeName){
+                                case 'w:r':
+                                    $wrArray = $this->_parseWrNode($childNode);
+                                    $this->run[] = $wrArray;
+								break;
+                                case 'w:hyperlink':
+                                    $hyperQuery = $this->xPath->query("w:hyperlink", $this->dom);
+                                    if ($hyperQuery->length > 0){
+                                        $hyperlink = '';
+                                        $hyperNode = $hyperQuery->item(0);
+                                        foreach ($hyperNode->childNodes as $cn){
+                                            if ($cn->nodeName == 'w:r')
+                                                $hyperlink = $cn->nodeValue;
+                                        }
+										
+                                        # If we have the raw hyperlink, parse it
+                                        if ($hyperlink != ''){
+											if (substr($hyperlink, 0, 4) != 'http'){
+												if (strpos($hyperlink, '@') !== false){
+													$modHyperlink = 'mailto:' . $hyperlink;
+												} else	
+													$modHyperlink = 'http://' . $hyperlink; 
+											} else $modHyperlink = $hyperlink;
+
+                                            $this->run[] = array(
+                                                'text' => '<a href="' . $modHyperlink . '">' . $hyperlink . '</a>',
+                                                'underline' => false,
+												'subscript' => false,
+												'superscript' => false,
+												'tab' => false,
+												'italic' => false,
+												'bold' => false
+                                            );
+                                        }
+                                    }
+
+								break;
+                            }
+
+                        }
 						
 						# Get the indentation
 						$indentQuery = $this->xPath->query("w:pPr/w:ind", $this->dom);
