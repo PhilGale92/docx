@@ -189,21 +189,37 @@
                                 case 'w:hyperlink':
                                     $hyperQuery = $this->xPath->query("w:hyperlink", $this->dom);
                                     if ($hyperQuery->length > 0){
-                                        $hyperlink = '';
+                                        $modHyperlink = $hyperlink = '';
                                         $hyperNode = $hyperQuery->item(0);
-                                        foreach ($hyperNode->childNodes as $cn){
+                                        $hyperAttributes = $hyperNode->attributes;
+
+                                        $bUsingExternalLink = false;
+                                        foreach ($hyperAttributes as $attribute) {
+                                            if ($attribute->nodeName == 'r:id') {
+                                                if (isset($this->docx->linkMappings[$attribute->nodeValue])){
+                                                    $modHyperlink = $this->docx->linkMappings[$attribute->nodeValue];
+                                                    $bUsingExternalLink = true;
+                                                }
+
+                                            }
+                                        }
+
+
+                                        foreach ($hyperNode->childNodes as $cn) {
                                             if ($cn->nodeName == 'w:r')
                                                 $hyperlink = $cn->nodeValue;
                                         }
-										
+
                                         # If we have the raw hyperlink, parse it
                                         if ($hyperlink != ''){
-											if (substr($hyperlink, 0, 4) != 'http'){
-												if (strpos($hyperlink, '@') !== false){
-													$modHyperlink = 'mailto:' . $hyperlink;
-												} else	
-													$modHyperlink = 'http://' . $hyperlink; 
-											} else $modHyperlink = $hyperlink;
+                                            if (!$bUsingExternalLink) {
+                                                if (substr($hyperlink, 0, 4) != 'http') {
+                                                    if (strpos($hyperlink, '@') !== false) {
+                                                        $modHyperlink = 'mailto:' . $hyperlink;
+                                                    } else
+                                                        $modHyperlink = 'http://' . $hyperlink;
+                                                } else $modHyperlink = $hyperlink;
+                                            }
 
                                             $this->run[] = array(
                                                 'text' => '<a href="' . $modHyperlink . '">' . $hyperlink . '</a>',

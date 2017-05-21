@@ -10,7 +10,8 @@
 			
 			public $nodes = array();
 			public $styles = array();
-			
+
+			public $linkMappings  = array() ;
 			private $_allowEmfImages = false;
 			private $_htmlArr = array();
 			
@@ -71,7 +72,7 @@
 					
 					# Get the image relationship xml structure
 					if ($entryName == 'word/_rels/document.xml.rels')
-						$this->xml['image'] = zip_entry_read($zipEntry, zip_entry_filesize($zipEntry));
+						$this->xml['docRelations'] = zip_entry_read($zipEntry, zip_entry_filesize($zipEntry));
 					
 					# Get the document structure
 					if ($entryName == 'word/document.xml')
@@ -82,22 +83,35 @@
 				zip_close($zip);
 				
 				# Apply relId's to the image array, so they can be attached to the structure
-				if (isset($this->xml['image'])){
+				if (isset($this->xml['docRelations'])){
 					$dom = new \DOMDocument();
-					$dom->loadXML($this->xml['image'], LIBXML_NOENT | LIBXML_XINCLUDE | LIBXML_NOERROR | LIBXML_NOWARNING);
+					$dom->loadXML($this->xml['docRelations'], LIBXML_NOENT | LIBXML_XINCLUDE | LIBXML_NOERROR | LIBXML_NOWARNING);
 					$dom->encoding = 'utf-8';
 					$elements = $dom->getElementsByTagName('*');
 					foreach ($elements as $node) {
 						if ($node->nodeName == 'Relationship'){
 							$relationshipAttributes = $node->attributes;
 							$relationId = $relationshipAttributes->item(0);
-							$relationTarget = $relationshipAttributes->item(2);
-							if (is_object($relationId) && is_object($relationTarget)){
-								if (strpos($relationTarget->nodeValue, 'media/') !== false){
-									$imageName = substr($relationTarget->nodeValue, 6);
-									$imageAssets[$imageName]['id'] = $relationId->nodeValue;
-								}
-							}
+                            $relationType = $relationshipAttributes->item(1);
+                            $relationTarget = $relationshipAttributes->item(2);
+
+                            /*
+                             * IF i had a copy of word i could rewrite this nicer...
+                             * Don't remember what relationType media is, so lets detect if hyperlink, if not run
+                             * older code
+                             */
+                            if (is_object($relationId) && is_object($relationTarget)){
+                                if (stripos($relationType->nodeValue, 'relationships/hyperlink') !== false){
+                                    $this->linkMappings[$relationId->nodeValue] = $relationTarget->nodeValue;
+                                } else {
+                                    if (
+                                        strpos($relationTarget->nodeValue, 'media/') !== false
+                                    ){
+                                        $imageName = substr($relationTarget->nodeValue, 6);
+                                        $imageAssets[$imageName]['id'] = $relationId->nodeValue;
+                                    }
+                                }
+                            }
 						}
 					}
 					$this->images = $imageAssets;
