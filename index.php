@@ -9,18 +9,22 @@
      */
     require_once('Docx/DocxFileManipulation.class.php');
     require_once('Docx/Docx.class.php');
+    require_once('Docx/LinkAttachment.class.php');
+    require_once('Docx/FileAttachment.class.php');
+    require_once('Docx/Node.class.php');
     require_once('Docx/Run.class.php');
 
     /*
      * Include html display for the demo
      */
+    $demoOnUploadedFileName = '';
     $absRoot = __DIR__ . DIRECTORY_SEPARATOR;
     require_once('html.tpl.php');
 
     /*
      * If we want to demo on a preUpload file, assign the path to here
      */
-    $demoOnUploadedFileName = 'test-fast-run.docx';
+    $demoOnUploadedFileName = 'test-fast-run-2.docx';
 
 	/*
 	 * If the target upload directory does not exist, create it 
@@ -57,7 +61,6 @@
         # Parse
         $parser = new Docx\Docx($fileUri );
         $parser
-            ->import()
             ->render('html')
         ;
         echo $parser->html;
