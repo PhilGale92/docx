@@ -77,6 +77,28 @@ class Docx extends DocxFileManipulation {
     }
 
     /**
+     * @return \DOMXPath|null
+     */
+    public function getXPath(){
+        return $this->_xPath;
+    }
+
+    /**
+     * @desc Converts internal docx measurment into px
+     * @param $twip int
+     * @return $px int
+     */
+    public function twipToPt($twip){
+        $px = round($twip / 20);
+        return $px;
+    }
+    /**
+     * @return array
+     */
+    public function getAttachedLinks(){
+        return $this->_linkAttachments;
+    }
+    /**
      * @desc Attaches a given Node to $this
      * @param $nodeObj Node
      */

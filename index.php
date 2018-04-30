@@ -12,6 +12,7 @@
     require_once('Docx/LinkAttachment.class.php');
     require_once('Docx/FileAttachment.class.php');
     require_once('Docx/Node.class.php');
+    require_once('Docx/Style.class.php');
     require_once('Docx/Run.class.php');
 
     /*
