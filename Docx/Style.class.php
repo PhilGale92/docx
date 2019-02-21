@@ -7,6 +7,12 @@
  */
 namespace Docx;
 class Style {
+
+    /**
+     * @var int
+     */
+    protected $_listLevel = 0;
+
     /**
      * @var string
      */
@@ -27,4 +33,13 @@ class Style {
     public static function getFromStyleName($styleName){
         return new Style($styleName);
     }
+
+
+    /**
+     * @return int
+     */
+    public function getListLevel(){
+        return $this->_listLevel;
+    }
+
 }

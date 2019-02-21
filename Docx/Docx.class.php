@@ -6,6 +6,8 @@
  * Time: 16:47
  */
 namespace Docx ;
+use Docx\Nodes\Para;
+
 class Docx extends DocxFileManipulation {
     /**
      * @var null  | \DOMXPath
@@ -28,7 +30,12 @@ class Docx extends DocxFileManipulation {
      */
     public function __construct($fileUri){
         parent::__construct($fileUri);
-        $this->_loadNodes();
+        try {
+            $this->_loadNodes();
+        } catch (\Exception $e) {
+            var_dump($e);
+            die;
+        }
     }
 
     /**
@@ -42,6 +49,7 @@ class Docx extends DocxFileManipulation {
 
     /**
      * @desc Pull out the primary data containers ( nodes ) that have different types depending on content type
+     * @throws \Exception
      */
     private function _loadNodes(){
         /*
@@ -64,16 +72,39 @@ class Docx extends DocxFileManipulation {
         $this->_xPath = $xPath;
 
         /*
-         * Now we need to pull out the tags that are to be parsed and iterate through each one!
+         * Now we need to load up the root node, and then iterate through recursively
          */
-        $elements = $xPath->query('//w:drawing | //w:txbxContent | //w:tbl | //w:p');
-        foreach ($elements as $element ) {
-            $parsedNode = new Node($this,  $element ) ;
-            $parsedNode->attachToDocx($this);
+        $bodyElementResult = $xPath->query('//w:body'); // //w:drawing | //w:txbxContent | //w:tbl | //w:p'
+        if ($bodyElementResult->length > 0 ) {
+            $bodyElement = $bodyElementResult->item(0 ) ;
+            $this->loadNodesFromElement($bodyElement) ;
+        } else {
+            throw new \Exception('No Body element found');
         }
-        var_dump($elements ) ;
+
+
         var_dump($this);
+
         die;
+    }
+
+    /**
+     * @param $domElement \DOMElement
+     */
+    public function loadNodesFromElement($domElement){
+        foreach ($domElement->childNodes as $childNode){
+            /**
+             * @var $childNode \DOMElement
+             */
+            switch ($childNode->tagName){
+                case 'w:p':
+
+                    $node = new Para($this, $childNode);
+                    $node->attachToDocx($this);
+
+                    break;
+            }
+        }
     }
 
     /**
@@ -86,7 +117,7 @@ class Docx extends DocxFileManipulation {
     /**
      * @desc Converts internal docx measurment into px
      * @param $twip int
-     * @return $px int
+     * @return int
      */
     public function twipToPt($twip){
         $px = round($twip / 20);
@@ -100,7 +131,7 @@ class Docx extends DocxFileManipulation {
     }
     /**
      * @desc Attaches a given Node to $this
-     * @param $nodeObj Node
+     * @param $nodeObj Nodes\Node
      */
     public function attachNode($nodeObj){
         $this->_constructedNodes[] = $nodeObj;

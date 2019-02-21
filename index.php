@@ -11,9 +11,11 @@
     require_once('Docx/Docx.class.php');
     require_once('Docx/LinkAttachment.class.php');
     require_once('Docx/FileAttachment.class.php');
-    require_once('Docx/Node.class.php');
+    require_once('Docx/Nodes/Node.class.php');
+    require_once('Docx/Nodes/Para.class.php');
+    require_once('Docx/Nodes/Run.class.php');
     require_once('Docx/Style.class.php');
-    require_once('Docx/Run.class.php');
+
 
     /*
      * Include html display for the demo
@@ -25,7 +27,7 @@
     /*
      * If we want to demo on a preUpload file, assign the path to here
      */
-    $demoOnUploadedFileName = 'test-fast-run-2.docx';
+    $demoOnUploadedFileName = 'WordDocxFix.docx';
 
 	/*
 	 * If the target upload directory does not exist, create it 

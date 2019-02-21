@@ -5,31 +5,84 @@
  * Date: 29/04/2018
  * Time: 18:49
  */
-namespace Docx;
+namespace Docx\Nodes;
 /**
  * Class Node
  * @package Docx
  */
-class Node {
+abstract class Node {
+
+    /**
+     * @var int|null
+     */
+    protected $id = null;
+
+    /**
+     * @var string|null
+     */
+    protected $parentId = null;
+
     /**
      * @var null | \DOMElement
      */
-    private $_domElement = null;
+    protected $_domElement = null;
     /**
-     * @var null | Docx
+     * @var null | \Docx\Docx
      */
-   private $_docx = null;
+   protected $_docx = null;
+
+    /**
+     * @var int
+     */
+   protected $indent = 0;
+    /**
+     * @var int
+     */
+   protected $listLevel = 0;
+    /**
+     * @var null | \Docx\Style
+     * @desc Tracks the discovered word style of the given node
+     */
+    protected $_wordStyle = null;
+
+    /**
+     * @var null | int
+     * @desc Internal NodeId of the parent table (if any )
+     *
+     */
+    private $_tableId = null ;
+
+    /**
+     * @var array
+     * @desc Track internal run objects
+     */
+    protected $_run = [] ;
+
+    /**
+     * @var bool
+     * @deappreciated
+     */
+    protected $isDirect = false;
+
+    /**
+     * @var string
+     */
+    protected $type = '';
+
     /**
      * Node constructor.
-     * @param $docx Docx
+     * @param $docx \Docx\Docx
      * @param $domElement \DOMElement
      * @param bool $isDirect ( Are we inside a table or similar? we may need to process differently if so)
      * @param string | null $parentNodeId ( Tracks our parent div)
      */
-   public function __construct($docx, $domElement,  $isDirect = false, $parentNodeId = null){
+   final public function __construct($docx, $domElement,  $isDirect = false, $parentNodeId = null){
        $this->_docx = $docx;
        $this->_domElement = $domElement;
-       $this->_parseNode($isDirect);
+       $this->_wordStyle = $this->_getStyle( $this->_domElement ) ;
+
+       $this->_extender( $isDirect );
+
        $this->id = $this->_docx->generateNodeId();
        $this->isDirect = $isDirect;
        $this->parentId = $parentNodeId;
@@ -37,42 +90,34 @@ class Node {
    }
 
     /**
+     * @param bool $isDirect
+     * @stub
+     */
+   protected function _extender( $isDirect ){
+
+   }
+
+    /**
      * @desc Integrates this Node object, into the Docx
-     * @param $docx Docx
+     * @param $docx \Docx\Docx
      */
    public function attachToDocx($docx){
        unset ( $this->_docx);
        $docx->attachNode($this ) ;
    }
 
-    /**
-     * @var null | int
-     * @desc Internal NodeId of the parent table (if any )
-     *
-     */
-   private $_tableId = null ;
-    /**
-     * @var null | Style
-     * @desc Tracks the discovered word style of the given node
-     */
-   private $_wordStyle = null;
-    /**
-     * @var array
-     * @desc Track internal run objects
-     */
-   protected $_run = [] ;
 
     /**
      * @param null DomElement $domElement
-     * @return Style
+     * @return \Docx\Style
      */
-   private function _getStyle($domElement = null ) {
+   protected function _getStyle($domElement = null ) {
        if ($domElement == null ) $domElement = $this->_domElement;
        $styleQuery = $this->_docx->getXPath()->query("w:pPr/w:pStyle", $domElement);
        $style = '';
        if ($styleQuery->length != 0)
            $style = $styleQuery->item(0)->getAttribute('w:val');
-       return Style::getFromStyleName($style) ;
+       return \Docx\Style::getFromStyleName($style) ;
    }
 
     /**
@@ -109,7 +154,6 @@ class Node {
         */
        switch ($this->_domElement->nodeName){
            case 'w:p':
-               $isListItem = false;
                $listLevel = 0;
                $indent = null;
 
