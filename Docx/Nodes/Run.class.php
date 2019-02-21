@@ -22,11 +22,16 @@ class Run  {
     /**
      * @var Node
      */
-    protected $parentNode = null;
+    protected $_parentNode = null;
     /**
      * @var null | \DOMElement
      */
-    protected $runElementNode = null;
+    protected $_runElementNode = null;
+
+    /**
+     * @var self[]
+     */
+    protected $_subRunStack = [] ;
 
     /**
      * Run constructor.
@@ -43,14 +48,14 @@ class Run  {
         if ( ! in_array($nodeType, $safeArr)) return;
         $this->_bIsValid = true ;
 
+        $this->_runElementNode = $runElementNode;
+        $this->_parentNode = $parentNode;
 
-        $this->runElementNode = $runElementNode;
-        $this->parentNode = $parentNode;
-        
-        switch ($nodeType){
-            case 'w:r':
-
-                break;
+        foreach ($this->_runElementNode->childNodes as $childNode){
+            $subRun = new self($childNode, $parentNode);
+            if ($subRun->isValid()){
+                $this->_subRunStack[] = $subRun;
+            }
         }
 
     }
