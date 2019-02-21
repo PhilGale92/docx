@@ -14,19 +14,17 @@ namespace Docx\Nodes;
  * in the different levels of drawings and other forms of content etc
  * content that goes into the node
  */
-class Run  {
+class Run extends RunDrawingLib {
+    /**
+     * @var \Docx\FileAttachment|\Docx\FileAttachment[]|null|string
+     * @desc Stores the relevant data to bubble to render stage
+     */
+    protected $_content = null;
+
     /**
      * @var bool
      */
     protected $_bIsValid = false;
-    /**
-     * @var Node
-     */
-    protected $_parentNode = null;
-    /**
-     * @var null | \DOMElement
-     */
-    protected $_runElementNode = null;
 
     /**
      * @var self[]
@@ -35,10 +33,11 @@ class Run  {
 
     /**
      * Run constructor.
+     * @param $docx \Docx\Docx
      * @param $runElementNode \DOMElement
      * @param $parentNode Node
      */
-    public function __construct($runElementNode, $parentNode)
+    public function __construct($docx, $runElementNode, $parentNode)
     {
 
         $nodeType = $runElementNode->tagName ;
@@ -50,9 +49,16 @@ class Run  {
 
         $this->_runElementNode = $runElementNode;
         $this->_parentNode = $parentNode;
+        $this->_docx = $docx;
+
+
+        if ($nodeType == 'w:drawing'){
+            $this->_content = $this->_loadDrawingData( ) ;
+        }
+
 
         foreach ($this->_runElementNode->childNodes as $childNode){
-            $subRun = new self($childNode, $parentNode);
+            $subRun = new self($docx, $childNode, $parentNode);
             if ($subRun->isValid()){
                 $this->_subRunStack[] = $subRun;
             }

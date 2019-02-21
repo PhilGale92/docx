@@ -33,6 +33,18 @@ class FileAttachment {
     protected $_relationLinkupId = null;
 
     /**
+     * @var array
+     * @desc Stores the data prepared for rendering, as processed by RunDrawingLib
+     * Format of :
+'type' => 'image',
+'name' => $imageData->getFileName(),
+'h' => $h,
+'w' => $w,
+'data' => $imageData->getFileData()
+     */
+    protected $_renderDataArr = [];
+
+    /**
      * FileAttachment constructor.
      * @param $fileName
      * @param $fileData
@@ -60,4 +72,53 @@ class FileAttachment {
     public function setWidth($width){
         $this->_width = $width;
     }
+
+    /**
+     * @param $renderArr array
+     */
+    public function setRunData($renderArr){
+        $this->_renderDataArr = $renderArr;
+    }
+    /**
+     * @return string|null
+     */
+    public function getLinkupId(){
+        return $this->_relationLinkupId;
+    }
+
+    /**
+     * @return int|string
+     */
+    public function getWidth(){
+        return $this->_width;
+    }
+
+    /**
+     * @return int|string
+     */
+    public function getHeight(){
+        return $this->_height;
+    }
+
+    /**
+     * @return string
+     */
+    public function getFileName(){
+        return $this->_fileName;
+    }
+
+    /**
+     * @return string
+     */
+    public function getFileData(){
+        return $this->_fileData;
+    }
+
+    /**
+     * @return array
+     */
+    public function getRenderFileData(){
+        return $this->_renderDataArr;
+    }
+
 }

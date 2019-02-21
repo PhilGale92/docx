@@ -81,7 +81,7 @@ abstract class Node {
        $this->_domElement = $domElement;
        $this->_wordStyle = $this->_getStyle( $this->_domElement ) ;
 
-       $this->_extender( $isDirect );
+       $this->_extender( $docx, $isDirect );
 
        $this->id = $this->_docx->generateNodeId();
        $this->isDirect = $isDirect;
@@ -90,10 +90,11 @@ abstract class Node {
    }
 
     /**
+     * @param \Docx\Docx $docx
      * @param bool $isDirect
      * @stub
      */
-   protected function _extender( $isDirect ){
+   protected function _extender( $docx, $isDirect ){
 
    }
 

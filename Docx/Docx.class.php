@@ -129,6 +129,23 @@ class Docx extends DocxFileManipulation {
     public function getAttachedLinks(){
         return $this->_linkAttachments;
     }
+
+    /**
+     * @param string | null $imageLinkupId
+     * @return FileAttachment[] | FileAttachment
+     */
+    public function getAttachedFiles($imageLinkupId = null){
+        if ($imageLinkupId == null) {
+            return $this->_fileAttachments;
+        }
+        $ret = [] ;
+        foreach ($this->_fileAttachments as $fileAttachment) {
+            if ($fileAttachment->getLinkupId() == $imageLinkupId){
+                $ret = $fileAttachment;
+            }
+        }
+        return $ret;
+    }
     /**
      * @desc Attaches a given Node to $this
      * @param $nodeObj Nodes\Node

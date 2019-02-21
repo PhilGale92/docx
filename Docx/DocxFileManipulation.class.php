@@ -29,7 +29,7 @@ abstract class DocxFileManipulation {
      */
     protected $_xmlRelations = '';
     /**
-     * @var array
+     * @var FileAttachment[]
      * @desc Track files
      */
     protected $_fileAttachments = [] ;

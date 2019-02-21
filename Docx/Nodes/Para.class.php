@@ -9,9 +9,10 @@ namespace Docx\Nodes;
 class Para extends Node {
 
     /**
+     * @param \Docx\Docx $docx
      * @param bool $isDirect
      */
-    protected function _extender( $isDirect ){
+    protected function _extender( $docx, $isDirect ){
 
         $listLevel = 0;
         $indent = null;
@@ -30,7 +31,7 @@ class Para extends Node {
 
         # Run through text runs & hyperlinks
         foreach ($this->_domElement->childNodes as $childNode){
-            $run = new Run($childNode, $this);
+            $run = new Run($docx, $childNode, $this);
             if ($run->isValid()) $this->_run[] = $run;
         }
 
