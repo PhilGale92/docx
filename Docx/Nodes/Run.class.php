@@ -42,7 +42,7 @@ class Run extends RunDrawingLib {
 
         $nodeType = $runElementNode->tagName ;
         $safeArr = [
-            'w:r', 'w:hyperlink', 'w:drawing'
+            'w:r', 'w:hyperlink', 'w:drawing', 'w:t'
         ];
         if ( ! in_array($nodeType, $safeArr)) return;
         $this->_bIsValid = true ;
@@ -52,10 +52,15 @@ class Run extends RunDrawingLib {
         $this->_docx = $docx;
 
 
+        /*
+         * @TODO - change ->_content into a '->_renderedRun' prop ?
+         * So we can avoid bubbling arrays around 
+         */
         if ($nodeType == 'w:drawing'){
             $this->_content = $this->_loadDrawingData( ) ;
+        } else if ($nodeType == 'w:t'){
+            $this->_content = $runElementNode->nodeValue ;
         }
-
 
         foreach ($this->_runElementNode->childNodes as $childNode){
             $subRun = new self($docx, $childNode, $parentNode);
