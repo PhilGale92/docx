@@ -28,7 +28,7 @@ abstract class RunDrawingLib {
     protected $_runElementNode = null;
 
     /**
-     *
+     * @return \Docx\FileAttachment|null
      */
     protected function _loadDrawingData(){
         # Get the blipFill for the imageRefId
@@ -41,7 +41,7 @@ abstract class RunDrawingLib {
             $blipNode = $blipFill;
         }
 
-        # Get the prev. element to load the alterateContent block
+        # Get the prev. element to load the alternateContent block
         $prevElement = $this->_runElementNode->parentNode->previousSibling;
         if (!isset($prevElement->nodeName)) return null;
 
@@ -72,7 +72,7 @@ abstract class RunDrawingLib {
 
             if (!is_object($imageData)) return null;
 
-            # Defaults are initally set as 'auto'
+            # Defaults are initially set as 'auto'
             $w = $imageData->getWidth();
             $h = $imageData->getHeight();
 

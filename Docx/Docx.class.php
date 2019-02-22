@@ -124,10 +124,20 @@ class Docx extends DocxFileManipulation {
         return $px;
     }
     /**
-     * @return array
+     * @param string | null $linkupId
+     * @return LinkAttachment[] | LinkAttachment
      */
-    public function getAttachedLinks(){
-        return $this->_linkAttachments;
+    public function getAttachedLinks($linkupId = null){
+        if ($linkupId == null ) {
+            return $this->_linkAttachments;
+        }
+        $ret = [];
+        foreach ($this->_linkAttachments as $linkAttachment ){
+            if ($linkAttachment->getLinkupId() == $linkupId) {
+                $ret = $linkAttachment;
+            }
+        }
+        return $ret ;
     }
 
     /**

@@ -25,4 +25,19 @@ class LinkAttachment {
         $this->_linkupId = $relationshipId;
         $this->_link = $link;
     }
+
+    /**
+     * @return string
+     */
+    public function getLinkupId(){
+        return $this->_linkupId;
+    }
+
+    /**
+     * @return string
+     */
+    public function getLink(){
+        return $this->_link;
+    }
+
 }

@@ -13,6 +13,7 @@
     require_once('Docx/FileAttachment.class.php');
     require_once('Docx/Nodes/Node.class.php');
     require_once('Docx/Nodes/RunDrawingLib.class.php');
+    require_once('Docx/Nodes/ProcessedRun.class.php');
     require_once('Docx/Nodes/Para.class.php');
     require_once('Docx/Nodes/Run.class.php');
     require_once('Docx/Style.class.php');

@@ -34,7 +34,7 @@ abstract class DocxFileManipulation {
      */
     protected $_fileAttachments = [] ;
     /**
-     * @var array
+     * @var LinkAttachment[]
      * @desc Track external reference based links
      */
     protected $_linkAttachments = [] ;
@@ -84,13 +84,9 @@ abstract class DocxFileManipulation {
 
                 /*
                  * Prevent EMF file extensions passing,
-                 * as they are used by word rather than being manually placed
-                 * @TODO - would we ever want to display .emf? plausable to just always hide
-                 * Need to look into the format details
+                 * Ref https://github.com/PhilGale92/docx/issues/2
                  */
-                # if (!$this->_allowEmfImages){
-                    if (substr($imageName, -3) == 'emf') continue;
-                # }
+                if (substr($imageName, -3) == 'emf') continue;
 
                 $imageData = base64_encode(
                     zip_entry_read($zipEntry, zip_entry_filesize( $zipEntry )  )
