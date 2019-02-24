@@ -156,7 +156,7 @@ abstract class Node {
                     # Compile the text from the runarr without the prepend / appending
                     $rawStr = $this->_getRawTextFromRun();
 
-                    # Constuct an htmlId, then use the styleData to decide what to do with it
+                    # Construct an htmlId, then use the styleData to decide what to do with it
                     $htmlId = Docx::getHtmlIdFromString($rawStr);
                     $idAttr = ' id="' . $htmlId . '"';
 
@@ -222,31 +222,4 @@ abstract class Node {
        return \Docx\Style::getFromStyleName($style) ;
    }
 
-    /**
-     * @param bool $isDirect
-     * @deprecated
-     * @TODO - delete me
-     */
-   private function _parseNode($isDirect = false ) {
-
-       /*
-        * Process each type of node
-        */
-       switch ($this->_domElement->nodeName){
-           case 'w:p':
-
-               break;
-           case 'w:drawing':
-         //      $this->img = $this->loadDrawing($this->dom);
-               break;
-           case 'w:txbxContent':
-
-               break;
-           case 'w:tbl':
-         //      $this->_tableId = $this->id;
-         //      $this->createTableGrid($this->dom);
-               break;
-       }
-
-   }
 }

@@ -31,7 +31,7 @@ class Para extends Node {
 
         # Run through text runs & hyperlinks
         foreach ($this->_domElement->childNodes as $childNode){
-            $run = new Run($docx, $childNode, $this);
+            $run = new Run($docx, $childNode);
             if ($run->isValid()) $this->_run[] = $run;
         }
 

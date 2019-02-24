@@ -138,7 +138,6 @@ class ProcessedRun {
         if ($this->_imageContent != null){
             $rawText .= $this->_imageContent->getImageHtmlTag();
         }
-
         $runPrepend  = $runAppend = '';
 
         if ($this->_attribBold){ $runPrepend = '<b>' . $runPrepend; $runAppend .= '</b>';}
@@ -150,8 +149,44 @@ class ProcessedRun {
 
         if ($this->_attribTabbed) $rawText = '<span class="tab"></span>' . $rawText;
 
-
-
         return $runPrepend . $rawText . $runAppend ;
     }
+
+    /**
+     * @return bool
+     */
+    public function getAttributeItalic(){
+        return $this->_attribItalic;
+    }
+    /**
+     * @return bool
+     */
+    public function getAttributeSupScript(){
+        return $this->_attribSupScript;
+    }
+    /**
+     * @return bool
+     */
+    public function getAttributeSubScript(){
+        return $this->_attribSubScript;
+    }
+    /**
+     * @return bool
+     */
+    public function getAttributeBold(){
+        return $this->_attribBold;
+    }
+    /**
+     * @return bool
+     */
+    public function getAttributeUnderline(){
+        return $this->_attribUnderline;
+    }
+    /**
+     * @return bool
+     */
+    public function getAttributeTabbed(){
+        return $this->_attribTabbed;
+    }
+
 }

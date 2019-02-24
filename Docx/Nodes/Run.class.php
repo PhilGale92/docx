@@ -34,10 +34,10 @@ class Run extends RunDrawingLib {
     /**
      * Run constructor.
      * @param $docx \Docx\Docx
-     * @param $runElementNode \DOMElement
-     * @param $parentNode Node
+     * @param runElementNode  \DOMElement
+     * @param $parentStyledRun ProcessedRun
      */
-    public function __construct($docx, $runElementNode, $parentNode)
+    public function __construct($docx, $runElementNode, $parentStyledRun = null)
     {
         $nodeType = null;
         if (isset($runElementNode->tagName)) $nodeType = $runElementNode->tagName;
@@ -50,8 +50,10 @@ class Run extends RunDrawingLib {
         $this->_bIsValid = true ;
 
         $this->_runElementNode = $runElementNode;
-        $this->_parentNode = $parentNode;
+        $this->_parentProcessedRun = $parentStyledRun;
         $this->_docx = $docx;
+
+
         $processedRun = new ProcessedRun();
         if ($nodeType == 'w:drawing'){
             $processedRun->setImageContent( $this->_loadDrawingData()) ;
@@ -60,12 +62,57 @@ class Run extends RunDrawingLib {
         } else if ($nodeType == 'w:hyperlink'){
             $processedRun = $this->_setHyperlinkForRun($processedRun );
         }
+
+
+        /*
+         * Query this run for style information
+         */
+        $runStyleQuery = $this->_docx->getXPath()->query("w:rPr", $runElementNode);
+        $tabQuery = $this->_docx->getXPath()->query("w:tab", $runElementNode);
+        if ($runStyleQuery->length > 0 ) {
+            foreach ($runStyleQuery->item(0)->childNodes as $docxStyleElement){
+                /**
+                 * @var $docxStyleElement \DOMElement
+                 */
+                switch ($docxStyleElement->nodeName){
+                    case 'w:vertAlign':
+                        $vertAttrib = $docxStyleElement->getAttribute('w:val');
+                        if ($vertAttrib == 'superscript'){
+                            $processedRun->setAttributeSupScript(true);
+                        } else if ($vertAttrib == 'subscript'){
+                            $processedRun->setAttributeSubScript(true);
+                        }
+                        break;
+                    case 'w:i':
+                        $processedRun->setAttributeItalic(true);
+                        break;
+                    case 'w:b':
+                        $processedRun->setAttributeBold(true);
+                        break;
+                    case 'w:u':
+                        $processedRun->setAttributeUnderline(true);
+                        break;
+                }
+            }
+        } else if (is_object($parentStyledRun)) {
+            $processedRun->setAttributeItalic($parentStyledRun->getAttributeItalic());
+            $processedRun->setAttributeSupScript($parentStyledRun->getAttributeSupScript());
+            $processedRun->setAttributeSubScript($parentStyledRun->getAttributeSubScript());
+            $processedRun->setAttributeBold($parentStyledRun->getAttributeBold());
+            $processedRun->setAttributeUnderline($parentStyledRun->getAttributeUnderline());
+        }
+        if ($tabQuery->length > 0 ){
+            $processedRun->setAttributeTabbed(true ) ;
+        } else if (is_object($parentStyledRun)) {
+            $processedRun->setAttributeTabbed($parentStyledRun->getAttributeTabbed());
+        }
+
         /*
          * Assign the processed entry into this, so we can bubble up the rendering behaviour
          */
         $this->_setProcessedRun($processedRun ) ;
         foreach ($this->_runElementNode->childNodes as $childNode){
-            $subRun = new self($docx, $childNode, $parentNode);
+            $subRun = new self($docx, $childNode, $processedRun);
             if ($subRun->isValid()){
                 $this->_subRunStack[] = $subRun;
             }
