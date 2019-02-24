@@ -157,7 +157,7 @@ abstract class Node {
                     $rawStr = $this->_getRawTextFromRun();
 
                     # Constuct an htmlId, then use the styleData to decide what to do with it
-                    $htmlId = Docx::buildHtmlIdFromString($rawStr);
+                    $htmlId = Docx::getHtmlIdFromString($rawStr);
                     $idAttr = ' id="' . $htmlId . '"';
 
                 }

@@ -130,10 +130,13 @@ class FileAttachment {
          */
         $imageInfo = explode(".", $this->_renderDataArr['name']);
 
+        /*
+         * Construct tag using attributes set from the Run-Image handler (RunDrawingLib)
+         */
         $ret = '<img alt=""'
             . ' width="' . $this->_renderDataArr['w'] . '" '
-            . ' height="' . $this->_renderDataArr['h'] . ' " '
-            . ' title="' . $imageInfo[0] . ' " '
+            . ' height="' . $this->_renderDataArr['h'] . '" '
+            . ' title="' . $imageInfo[0] . '" '
             . ' src="data:image/' . $imageInfo[1] . ';base64,' . $this->_renderDataArr['data'] . '" />'
         ;
         return $ret ;

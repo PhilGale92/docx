@@ -8,6 +8,12 @@
 namespace Docx ;
 use Docx\Nodes\Para;
 
+/**
+ * Class Docx
+ * @desc Prepares xPath & domDocument for loaded .docx file,
+ * and processes elements into internal Node & Run objects
+ * @package Docx
+ */
 class Docx extends DocxFileManipulation {
     /**
      * @var null  | \DOMXPath
@@ -15,6 +21,7 @@ class Docx extends DocxFileManipulation {
     protected $_xPath = null ;
     /**
      * @var int
+     * @deprecated
      * @desc -1 index, so when looping starts, it goes from 0
      */
     private $_incrementedInternalNodeId = -1 ;
@@ -38,27 +45,7 @@ class Docx extends DocxFileManipulation {
         }
     }
 
-    /**
-     * @param $rawString string
-     * @desc Given a string, we process out any characters that cannot be output for an htmlId attribute
-     * @return string
-     */
-    public static function buildHtmlIdFromString($rawString){
-        $ret = 'docx_' . $rawString;
-        $ret = str_replace(['&nbsp;', " "], ["", '_'], $ret);
-        $ret = trim(strip_tags($ret));
-        $ret = preg_replace("/[^A-Za-z0-9_]/", '', $ret);
-        return $ret;
-    }
 
-    /**
-     * @desc Generates a unique ID for a given node ( on request )
-     * @return int
-     */
-    public function generateNodeId(){
-        $this->_incrementedInternalNodeId++;
-        return $this->_incrementedInternalNodeId ;
-    }
 
     /**
      * @desc Pull out the primary data containers ( nodes ) that have different types depending on content type
@@ -116,6 +103,27 @@ class Docx extends DocxFileManipulation {
             }
         }
     }
+    /**
+     * @desc Attaches a given Node to $this
+     * @param $nodeObj Nodes\Node
+     */
+    public function attachNode($nodeObj){
+        $this->_constructedNodes[] = $nodeObj;
+    }
+
+
+    /**
+     * @param string $renderViewType
+     * @return string
+     */
+    public function render($renderViewType = 'html'){
+        $ret = '';
+        foreach ($this->_constructedNodes as $constructedNode){
+            $ret .=  $constructedNode->render($renderViewType);
+        }
+        return $ret ;
+
+    }
 
     /**
      * @return \DOMXPath|null
@@ -124,15 +132,21 @@ class Docx extends DocxFileManipulation {
         return $this->_xPath;
     }
 
+
     /**
-     * @desc Converts internal docx measurment into px
-     * @param $twip int
-     * @return int
+     * @param $rawString string
+     * @desc Given a string, we process out any characters that cannot be output for an htmlId attribute
+     * @return string
      */
-    public function twipToPt($twip){
-        $px = round($twip / 20);
-        return $px;
+    public static function getHtmlIdFromString($rawString){
+        $ret = 'docx_' . $rawString;
+        $ret = str_replace(['&nbsp;', " "], ["", '_'], $ret);
+        $ret = trim(strip_tags($ret));
+        $ret = preg_replace("/[^A-Za-z0-9_]/", '', $ret);
+        return $ret;
     }
+
+
     /**
      * @param string | null $linkupId
      * @return LinkAttachment[] | LinkAttachment
@@ -166,24 +180,25 @@ class Docx extends DocxFileManipulation {
         }
         return $ret;
     }
+
     /**
-     * @desc Attaches a given Node to $this
-     * @param $nodeObj Nodes\Node
+     * @desc Converts internal docx measurment into px
+     * @param $twip int
+     * @return int
      */
-    public function attachNode($nodeObj){
-        $this->_constructedNodes[] = $nodeObj;
+    public function twipToPt($twip){
+        $px = round($twip / 20);
+        return $px;
     }
 
-    /**
-     * @param string $renderViewType
-     * @return string
-     */
-    public function render($renderViewType = 'html'){
-        $ret = '';
-        foreach ($this->_constructedNodes as $constructedNode){
-            $ret .=  $constructedNode->render($renderViewType);
-        }
-        return $ret ;
 
+    /**
+     * @desc Generates a unique ID for a given node ( on request )
+     * @deprecated
+     * @return int
+     */
+    public function generateNodeId(){
+        $this->_incrementedInternalNodeId++;
+        return $this->_incrementedInternalNodeId ;
     }
 }
