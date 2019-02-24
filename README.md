@@ -20,7 +20,7 @@ Recode branch - Work in progress.
 
 Progress: 
 * [x] Paragraphs (basic text)
-* [ ] Text attributes (bold, underline, italic, tabbed, sub & sup script) 
+* [x] Text attributes (bold, underline, italic, tabbed, sub & sup script) 
 * [x] Images
 * [x] Images - inline (new!)
 * [ ] Lists
