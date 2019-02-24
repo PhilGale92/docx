@@ -65,10 +65,9 @@
 	if ($fileUri != null ) {
         # Parse
         $parser = new Docx\Docx($fileUri );
-        $parser
+        echo $parser
             ->render('html')
         ;
-        echo $parser->html;
         $showForm = false;
     }
 	

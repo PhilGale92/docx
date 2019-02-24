@@ -19,7 +19,7 @@ class Docx extends DocxFileManipulation {
      */
     private $_incrementedInternalNodeId = -1 ;
     /**
-     * @var array
+     * @var Nodes\Node[]
      * @desc Track constructed Nodes
      */
     protected $_constructedNodes = [];
@@ -36,6 +36,19 @@ class Docx extends DocxFileManipulation {
             var_dump($e);
             die;
         }
+    }
+
+    /**
+     * @param $rawString string
+     * @desc Given a string, we process out any characters that cannot be output for an htmlId attribute
+     * @return string
+     */
+    public static function buildHtmlIdFromString($rawString){
+        $ret = 'docx_' . $rawString;
+        $ret = str_replace(['&nbsp;', " "], ["", '_'], $ret);
+        $ret = trim(strip_tags($ret));
+        $ret = preg_replace("/[^A-Za-z0-9_]/", '', $ret);
+        return $ret;
     }
 
     /**
@@ -83,9 +96,6 @@ class Docx extends DocxFileManipulation {
         }
 
 
-        var_dump($this);
-
-        die;
     }
 
     /**
@@ -166,11 +176,14 @@ class Docx extends DocxFileManipulation {
 
     /**
      * @param string $renderViewType
-     * @return $this
+     * @return string
      */
     public function render($renderViewType = 'html'){
-
-        return $this;
+        $ret = '';
+        foreach ($this->_constructedNodes as $constructedNode){
+            $ret .=  $constructedNode->render($renderViewType);
+        }
+        return $ret ;
 
     }
 }

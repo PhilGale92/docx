@@ -73,6 +73,12 @@ class Run extends RunDrawingLib {
 
     }
 
+    /**
+     * @return Run[]
+     */
+    public function getSubRunStack(){
+        return $this->_subRunStack;
+    }
 
     /**
      * @return bool
@@ -127,5 +133,28 @@ class Run extends RunDrawingLib {
             $processedRun->setHyperLinkHref($hyperlink);
         }
         return $processedRun;
+    }
+
+    /**
+     * @return string
+     */
+    public function getRawText(){
+        $ret = $this->_processedRun->getRawText() ;
+        foreach ($this->_subRunStack as $subRun){
+            $ret .= $subRun->getRawText();
+        }
+        return $ret;
+    }
+
+    /**
+     * @param string $renderMode
+     * @return string
+     */
+    public function getProcessedText($renderMode = 'html'){
+        $ret = $this->_processedRun->getProcessedText( $renderMode) ;
+        foreach ($this->_subRunStack as $subRun){
+            $ret .= $subRun->getProcessedText($renderMode);
+        }
+        return $ret;
     }
 }

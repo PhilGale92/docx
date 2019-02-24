@@ -121,4 +121,22 @@ class FileAttachment {
         return $this->_renderDataArr;
     }
 
+    /**
+     * @return string
+     */
+    public function getImageHtmlTag(){
+        /*
+         * get basic image extension from the file name...
+         */
+        $imageInfo = explode(".", $this->_renderDataArr['name']);
+
+        $ret = '<img alt=""'
+            . ' width="' . $this->_renderDataArr['w'] . '" '
+            . ' height="' . $this->_renderDataArr['h'] . ' " '
+            . ' title="' . $imageInfo[0] . ' " '
+            . ' src="data:image/' . $imageInfo[1] . ';base64,' . $this->_renderDataArr['data'] . '" />'
+        ;
+        return $ret ;
+    }
+
 }

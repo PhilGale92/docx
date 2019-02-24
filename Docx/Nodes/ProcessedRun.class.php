@@ -16,6 +16,10 @@ class ProcessedRun {
     /**
      * @var bool
      */
+    protected $_attribTabbed = false;
+    /**
+     * @var bool
+     */
     protected $_attribUnderline = false;
     /**
      * @var bool
@@ -109,5 +113,45 @@ class ProcessedRun {
      */
     public function setAttributeUnderline($toggle){
         $this->_attribUnderline = $toggle;
+    }
+
+    /**
+     * @param $toggle bool
+     */
+    public function setAttributeTabbed($toggle){
+        $this->_attribTabbed = $toggle;
+    }
+
+    /**
+     * @return string
+     */
+    public function getRawText(){
+        return $this->_textContent;
+    }
+
+    /**
+     * @param string $renderMode
+     * @return string
+     */
+    public function getProcessedText( $renderMode = 'html'){
+        $rawText = $this->getRawText();
+        if ($this->_imageContent != null){
+            $rawText .= $this->_imageContent->getImageHtmlTag();
+        }
+
+        $runPrepend  = $runAppend = '';
+
+        if ($this->_attribBold){ $runPrepend = '<b>' . $runPrepend; $runAppend .= '</b>';}
+        if ($this->_attribUnderline){ $runPrepend = '<u>' . $runPrepend; $runAppend .= '</u>';}
+        if ($this->_attribItalic){ $runPrepend = '<i>' . $runPrepend; $runAppend .= '</i>';}
+
+        if ($this->_attribSupScript){ $runPrepend = '<sup>' . $runPrepend; $runAppend .= '</sup>';}
+        if ($this->_attribSubScript){ $runPrepend = '<sub>' . $runPrepend; $runAppend .= '</sub>';}
+
+        if ($this->_attribTabbed) $rawText = '<span class="tab"></span>' . $rawText;
+
+
+
+        return $runPrepend . $rawText . $runAppend ;
     }
 }
