@@ -211,14 +211,17 @@ abstract class Node {
     /**
      * @desc Integrates this Node object, into the Docx
      * @param $docx \Docx\Docx
+     * @param bool $bRunAttachmentToRoot
      */
-   public function attachToDocx($docx){
+   public function attachToDocx($docx, $bRunAttachmentToRoot = true ){
        unset ( $this->_docx);
        foreach ($this->_run as $run){
            $run->unsetHelpers();
 
        }
-       $docx->attachNode($this ) ;
+       if ($bRunAttachmentToRoot) {
+           $docx->attachNode($this);
+       }
    }
 
 

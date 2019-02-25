@@ -6,6 +6,7 @@
  * Time: 16:47
  */
 namespace Docx ;
+use Docx\Nodes\Node;
 use Docx\Nodes\Para;
 use Docx\Nodes\Table;
 
@@ -88,8 +89,11 @@ class Docx extends DocxFileManipulation {
 
     /**
      * @param $domElement \DOMElement
+     * @param bool $bIsFromRootElement
+     * @return Node[]
      */
-    public function loadNodesFromElement($domElement){
+    public function loadNodesFromElement($domElement, $bIsFromRootElement = true ){
+        $ret = [];
         foreach ($domElement->childNodes as $childNode){
             /**
              * @var $childNode \DOMElement
@@ -103,18 +107,27 @@ class Docx extends DocxFileManipulation {
                     $node = new Para($this, $childNode);
                     break;
             }
-            if (is_object($node)) $node->attachToDocx($this) ;
+            if (is_object($node)) {
+                $node->attachToDocx($this, $bIsFromRootElement );
+
+                $ret[] = $node;
+            }
         }
-        $this->_listPostProcessor();
+
+        $ret  = $this->_listPostProcessor( $ret );
+
+        return $ret ;
     }
 
     /**
      * @desc Modifies $this->>_constructed nodes, and finds the relevant list tags
      * and modifies the sibling nodes prepend/append attributes as needed
+     * @param $nodeArr Node[]
+     * @return Node[]
      */
-    protected function _listPostProcessor(){
+    protected function _listPostProcessor($nodeArr ){
         $currentListLevel = 0;
-        foreach ($this->_constructedNodes as $i =>  $node ) {
+        foreach ($nodeArr as $i =>  $node ) {
             /*
              * Override the node type
              */
@@ -134,11 +147,11 @@ class Docx extends DocxFileManipulation {
              */
             if ($currentListLevel > $node->getListLevel()){
                 for ($loopI = $currentListLevel; $loopI > $node->getListLevel(); $loopI--){
-                    $this->_constructedNodes[$i - 1]->appendAdditional('</li></ul>');
+                    $nodeArr[$i - 1]->appendAdditional('</li></ul>');
                 }
             } else {
                 if ($currentListLevel > 0 && $currentListLevel == $node->getListLevel()) {
-                    $this->_constructedNodes[$i - 1]->appendAdditional('</li>');
+                    $nodeArr[$i - 1]->appendAdditional('</li>');
                 }
             }
             if ($currentListLevel < $node->getListLevel()){
@@ -152,6 +165,7 @@ class Docx extends DocxFileManipulation {
             }
             $currentListLevel = $node->getListLevel();
         }
+        return $nodeArr;
     }
 
     /**

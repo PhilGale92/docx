@@ -56,12 +56,15 @@ class Table extends Node {
     /**
      * @param $cellElement \DOMElement
      * @return string
-     * @TODO - not sure what this should return...
      */
     protected function _renderCell($cellElement){
-        static $x = 0;
-        $x++;
-        return 'cell_' . $x;
+        # Run through text runs & hyperlinks
+        $cellNodes = $this->_docx->loadNodesFromElement($cellElement, false );
+        $ret = '';
+        foreach ($cellNodes as $cellNode ) {
+            $ret .= $cellNode->render('html');
+        }
+        return $ret;
     }
 
     protected function _renderTableGrid(){
@@ -105,31 +108,29 @@ class Table extends Node {
                 }
 
 
-                $subcellClassStr = '';
-                if (isset($cell[0])) $subcellClassStr = ' has_subcell ';
+                $subCellClassStr = '';
+                if (isset($cell[0])) $subCellClassStr = ' has_subcell ';
                 $cellHtml = '';
 
                 if (isset($cell[0])){
                     # Sub cell within cell
                     $cellHtml .= '<table>';
                     foreach ($cell as $iii => $subCell){
-                        # Dont render an empty subcell
+                        # Dont render an empty subCell
                         $contentCheck = $this->_docx->getXPath()->query("w:p/w:r", $subCell['dom']);
                         if ($contentCheck->length == 0)
                             continue;
-                        $cellHtml .= '<tr class="vmerge merge_' . $ii  . '_' . $iii . '">
-								    <td>';
-                        $cellHtml .= $this->_renderCell($subCell['dom']);
-                        $cellHtml .= '</td>
-                                    </tr>';
+                        $cellHtml .= '<tr class="vmerge merge_' . $ii  . '_' . $iii . '"><td>';
+                            $cellHtml .= $this->_renderCell($subCell['dom']);
+                        $cellHtml .= '</td></tr>';
                     }
                     $cellHtml .= '</table>';
                 } else {
                     # Standard cell
                     $cellHtml .= $this->_renderCell($cell['dom']);
                 }
-                $cellTagInit = '<' . $cellTag . ' class="col_' . ($ii + 1) . $subcellClassStr . $colSpanClass .  '" ' . $colSpanStr . '>';
-                $html .= $cellTagInit;
+                $html .=  '<' . $cellTag . ' class="col_' . ($ii + 1) . $subCellClassStr . $colSpanClass .  '" '
+                    . $colSpanStr . '>';
                 $html .= $cellHtml;
                 $html .= '</' . $cellTag . '>';
             }
