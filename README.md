@@ -25,7 +25,7 @@ Progress:
 * [x] Images - inline (new!)
 * [x] Lists
 * [x] Hyperlinks
-* [ ] Tables
+* [x] Tables (colspans, vertical merged cells etc)
 * [ ] Word Styles
 * [ ] Textboxes
 

@@ -55,20 +55,24 @@ class Table extends Node {
 
     /**
      * @param $cellElement \DOMElement
+     * @param string $renderFormat
      * @return string
      */
-    protected function _renderCell($cellElement){
+    protected function _renderCell($cellElement, $renderFormat = 'html'){
         # Run through text runs & hyperlinks
         $cellNodes = $this->_docx->loadNodesFromElement($cellElement, false );
         $ret = '';
         foreach ($cellNodes as $cellNode ) {
-            $ret .= $cellNode->render('html');
+            $ret .= $cellNode->render($renderFormat);
         }
         return $ret;
     }
 
+    /**
+     * @desc Sets ->_tableHtml using the rendered tableGrid, all in HTML format
+     */
     protected function _renderTableGrid(){
-        # Stage 7 - Write the HTML (Tokenize where the contents of the table can be inserted)
+        # Write the HTML (Tokenize where the contents of the table can be inserted)
         $html = '<table class="col_count_' . $this->_maxColumnCount . '">';
         foreach ($this->_tableGrid as $i => $row){
             $headerStr = '';
