@@ -7,6 +7,7 @@
  */
 namespace Docx ;
 use Docx\Nodes\Para;
+use Docx\Nodes\Table;
 
 /**
  * Class Docx
@@ -93,14 +94,16 @@ class Docx extends DocxFileManipulation {
             /**
              * @var $childNode \DOMElement
              */
+            $node = null ;
             switch ($childNode->tagName){
+                case 'w:tbl':
+                    $node = new Table($this, $childNode);
+                    break;
                 case 'w:p':
-
                     $node = new Para($this, $childNode);
-                    $node->attachToDocx($this);
-
                     break;
             }
+            if (is_object($node)) $node->attachToDocx($this) ;
         }
         $this->_listPostProcessor();
     }

@@ -57,8 +57,6 @@ abstract class Node {
      */
     protected $_wordStyle = null;
 
-
-
     /**
      * @var null | int
      * @deprecated
@@ -174,6 +172,7 @@ abstract class Node {
             }
         }
 
+
         $ret .= $elementPrepend;
 
         /*
@@ -181,6 +180,16 @@ abstract class Node {
          */
        if ($this->indent != 0)
            $ret .= '<span class="indent ind_' . $this->indent . '">&nbsp;</span>';
+
+       /*
+        * Run table sys. injection
+        */
+       if ($this->type == 'w:tbl'){
+           /**
+            * @var $this Table
+            */
+           $ret .= $this->getTableRender($renderMode );
+       }
 
        /*
         * Load up actual processed contents !
@@ -264,5 +273,7 @@ abstract class Node {
    public function appendAdditional($additionalString){
        $this->_appendOutput .= $additionalString;
    }
+
+
 
 }
