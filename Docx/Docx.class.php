@@ -21,12 +21,7 @@ class Docx extends DocxFileManipulation {
      * @var null  | \DOMXPath
      */
     protected $_xPath = null ;
-    /**
-     * @var int
-     * @deprecated
-     * @desc -1 index, so when looping starts, it goes from 0
-     */
-    private $_incrementedInternalNodeId = -1 ;
+
     /**
      * @var Nodes\Node[]
      * @desc Track constructed Nodes
@@ -257,13 +252,4 @@ class Docx extends DocxFileManipulation {
     }
 
 
-    /**
-     * @desc Generates a unique ID for a given node ( on request )
-     * @deprecated
-     * @return int
-     */
-    public function generateNodeId(){
-        $this->_incrementedInternalNodeId++;
-        return $this->_incrementedInternalNodeId ;
-    }
 }

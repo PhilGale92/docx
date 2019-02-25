@@ -35,9 +35,8 @@ class Table extends Node {
 
     /**
      * @param \Docx\Docx $docx
-     * @param bool $isDirect
      */
-    protected function _extender( $docx, $isDirect ){
+    protected function _extender( $docx ){
         $this->_tableGrid = $this->_drawTableGrid();
         $this->_renderTableGrid(  ) ;
     }

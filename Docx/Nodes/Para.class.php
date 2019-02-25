@@ -10,9 +10,8 @@ class Para extends Node {
 
     /**
      * @param \Docx\Docx $docx
-     * @param bool $isDirect
      */
-    protected function _extender( $docx, $isDirect ){
+    protected function _extender( $docx ){
 
         $listLevel = 0;
         $indent = null;
@@ -42,8 +41,8 @@ class Para extends Node {
             $indent = (int) $this->_docx->twipToPt($firstLineInd);
         }
 
-        $this->indent = $indent;
-        $this->listLevel = $listLevel;
+        $this->_indent = $indent;
+        $this->_listLevel = $listLevel;
 
 
     }

@@ -15,17 +15,6 @@ use Docx\Docx;
 abstract class Node {
 
     /**
-     * @var int|null
-     */
-    protected $id = null;
-
-    /**
-     * @var string|null
-     * @deprecated
-     */
-    protected $parentId = null;
-
-    /**
      * @var null | \DOMElement
      */
     protected $_domElement = null;
@@ -37,11 +26,11 @@ abstract class Node {
     /**
      * @var int
      */
-   protected $indent = 0;
+   protected $_indent = 0;
     /**
      * @var int
      */
-   protected $listLevel = 0;
+   protected $_listLevel = 0;
     /**
      * @var string
      */
@@ -58,24 +47,10 @@ abstract class Node {
     protected $_wordStyle = null;
 
     /**
-     * @var null | int
-     * @deprecated
-     * @desc Internal NodeId of the parent table (if any )
-     *
-     */
-    private $_tableId = null ;
-
-    /**
      * @var Run[]
      * @desc Track internal run objects
      */
     protected $_run = [] ;
-
-    /**
-     * @var bool
-     * @deprecated
-     */
-    protected $isDirect = false;
 
     /**
      * @var string
@@ -86,28 +61,21 @@ abstract class Node {
      * Node constructor.
      * @param $docx \Docx\Docx
      * @param $domElement \DOMElement
-     * @param bool $isDirect ( Are we inside a table or similar? we may need to process differently if so)
-     * @param string | null $parentNodeId ( Tracks our parent div)
      */
-   final public function __construct($docx, $domElement,  $isDirect = false, $parentNodeId = null){
+   final public function __construct($docx, $domElement){
        $this->_docx = $docx;
        $this->_domElement = $domElement;
        $this->_wordStyle = $this->_getStyle( $this->_domElement ) ;
 
-       $this->_extender( $docx, $isDirect );
-
-       $this->id = $this->_docx->generateNodeId();
-       $this->isDirect = $isDirect;
-       $this->parentId = $parentNodeId;
+       $this->_extender( $docx );
        $this->type = $domElement->nodeName;
    }
 
     /**
      * @param \Docx\Docx $docx
-     * @param bool $isDirect
      * @stub
      */
-   protected function _extender( $docx, $isDirect ){
+   protected function _extender( $docx ){
 
    }
 
@@ -178,8 +146,8 @@ abstract class Node {
         /*
          * Apply node-level indent
          */
-       if ($this->indent != 0)
-           $ret .= '<span class="indent ind_' . $this->indent . '">&nbsp;</span>';
+       if ($this->_indent != 0)
+           $ret .= '<span class="indent ind_' . $this->_indent . '">&nbsp;</span>';
 
        /*
         * Run table sys. injection
@@ -243,7 +211,7 @@ abstract class Node {
      * @desc Exposes list level for the list-post processing stage
      */
    public function getListLevel(){
-       return $this->listLevel;
+       return $this->_listLevel;
    }
 
     /**
