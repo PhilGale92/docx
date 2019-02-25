@@ -131,7 +131,7 @@ class ProcessedRun {
 
     /**
      * @param string $renderMode
-     * @return string
+     * @return array ['prepend', 'content', 'append']
      */
     public function getProcessedText( $renderMode = 'html'){
         $rawText = $this->getRawText();
@@ -139,17 +139,23 @@ class ProcessedRun {
             $rawText .= $this->_imageContent->getImageHtmlTag();
         }
         $runPrepend  = $runAppend = '';
+        if ($this->_hyperLinkHref != null ) {
+            $runPrepend = '<a href="' . $this->_hyperLinkHref . '">' . $runPrepend;
+            $runAppend .= '</a>';
+        }
 
         if ($this->_attribBold){ $runPrepend = '<b>' . $runPrepend; $runAppend .= '</b>';}
         if ($this->_attribUnderline){ $runPrepend = '<u>' . $runPrepend; $runAppend .= '</u>';}
         if ($this->_attribItalic){ $runPrepend = '<i>' . $runPrepend; $runAppend .= '</i>';}
-
         if ($this->_attribSupScript){ $runPrepend = '<sup>' . $runPrepend; $runAppend .= '</sup>';}
         if ($this->_attribSubScript){ $runPrepend = '<sub>' . $runPrepend; $runAppend .= '</sub>';}
-
         if ($this->_attribTabbed) $rawText = '<span class="tab"></span>' . $rawText;
 
-        return $runPrepend . $rawText . $runAppend ;
+        return [
+            'prepend' => $runPrepend,
+             'content' =>  $rawText,
+            'append' =>  $runAppend
+        ];
     }
 
     /**

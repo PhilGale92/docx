@@ -35,9 +35,8 @@ class Run extends RunDrawingLib {
      * Run constructor.
      * @param $docx \Docx\Docx
      * @param runElementNode  \DOMElement
-     * @param $parentStyledRun ProcessedRun
      */
-    public function __construct($docx, $runElementNode, $parentStyledRun = null)
+    public function __construct($docx, $runElementNode)
     {
         $nodeType = null;
         if (isset($runElementNode->tagName)) $nodeType = $runElementNode->tagName;
@@ -50,9 +49,7 @@ class Run extends RunDrawingLib {
         $this->_bIsValid = true ;
 
         $this->_runElementNode = $runElementNode;
-        $this->_parentProcessedRun = $parentStyledRun;
         $this->_docx = $docx;
-
 
         $processedRun = new ProcessedRun();
         if ($nodeType == 'w:drawing'){
@@ -62,7 +59,6 @@ class Run extends RunDrawingLib {
         } else if ($nodeType == 'w:hyperlink'){
             $processedRun = $this->_setHyperlinkForRun($processedRun );
         }
-
 
         /*
          * Query this run for style information
@@ -94,17 +90,10 @@ class Run extends RunDrawingLib {
                         break;
                 }
             }
-        } else if (is_object($parentStyledRun)) {
-            $processedRun->setAttributeItalic($parentStyledRun->getAttributeItalic());
-            $processedRun->setAttributeSupScript($parentStyledRun->getAttributeSupScript());
-            $processedRun->setAttributeSubScript($parentStyledRun->getAttributeSubScript());
-            $processedRun->setAttributeBold($parentStyledRun->getAttributeBold());
-            $processedRun->setAttributeUnderline($parentStyledRun->getAttributeUnderline());
         }
+
         if ($tabQuery->length > 0 ){
             $processedRun->setAttributeTabbed(true ) ;
-        } else if (is_object($parentStyledRun)) {
-            $processedRun->setAttributeTabbed($parentStyledRun->getAttributeTabbed());
         }
 
         /*
@@ -148,37 +137,32 @@ class Run extends RunDrawingLib {
      * @return ProcessedRun
      */
     private function _setHyperlinkForRun($processedRun){
-        $hyperQuery = $this->_docx->getXPath()->query("w:hyperlink", $this->_runElementNode);
-        if ($hyperQuery->length > 0 ) {
-            $hyperNode = $hyperQuery->item(0);
-            $hyperlink = '';
-
-            $bAutomaticLink = true ;
-
-            foreach ($hyperNode->attributes as $attribute){
-                if ($attribute->nodeName == 'r:id') {
-                    $attachedLink = $this->_docx->getAttachedLinks($attribute->nodeValue);
-                    if (is_object($attachedLink)) {
-                        $hyperlink = $attachedLink->getLink();
-                        $bAutomaticLink = false;
-                    }
+        $hyperlink = '';
+        $bAutomaticLink = true ;
+        foreach ($this->_runElementNode->attributes as $attribute){
+            if ($attribute->nodeName == 'r:id') {
+                $attachedLink = $this->_docx->getAttachedLinks($attribute->nodeValue);
+                if (is_object($attachedLink)) {
+                    $hyperlink = $attachedLink->getLink();
+                    $bAutomaticLink = false;
                 }
             }
-            if ($bAutomaticLink) {
-                foreach ($hyperNode->childNodes as $cn) {
-                    if ($cn->nodeName == 'w:r')
-                        $hyperlink = $cn->nodeValue;
-                }
-                if (substr($hyperlink, 0, 4) != 'http') {
-                    if (strpos($hyperlink, '@') !== false) {
-                        $hyperlink = 'mailto:' . $hyperlink;
-                    } else
-                        $hyperlink = 'http://' . $hyperlink;
-                }
-            }
-            $processedRun->setHyperLinkAutoBehaviour($bAutomaticLink);
-            $processedRun->setHyperLinkHref($hyperlink);
         }
+        if ($bAutomaticLink) {
+            foreach ($this->_runElementNode->childNodes as $cn) {
+                if ($cn->nodeName == 'w:r')
+                    $hyperlink = $cn->nodeValue;
+            }
+            if (substr($hyperlink, 0, 4) != 'http') {
+                if (strpos($hyperlink, '@') !== false) {
+                    $hyperlink = 'mailto:' . $hyperlink;
+                } else
+                    $hyperlink = 'http://' . $hyperlink;
+            }
+        }
+        $processedRun->setHyperLinkAutoBehaviour($bAutomaticLink);
+        $processedRun->setHyperLinkHref($hyperlink);
+
         return $processedRun;
     }
 
@@ -198,10 +182,14 @@ class Run extends RunDrawingLib {
      * @return string
      */
     public function getProcessedText($renderMode = 'html'){
-        $ret = $this->_processedRun->getProcessedText( $renderMode) ;
+        $retArr = $this->_processedRun->getProcessedText( $renderMode) ;
+
+        $ret = $retArr['prepend'] . $retArr['content'];
+
         foreach ($this->_subRunStack as $subRun){
             $ret .= $subRun->getProcessedText($renderMode);
         }
+        $ret .= $retArr['append'];
         return $ret;
     }
 }

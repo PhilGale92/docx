@@ -19,10 +19,6 @@ abstract class RunDrawingLib {
      */
     protected $_docx = null;
     /**
-     * @var ProcessedRun
-     */
-    protected $_parentProcessedRun = null;
-    /**
      * @var null | \DOMElement
      */
     protected $_runElementNode = null;
