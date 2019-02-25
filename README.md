@@ -23,8 +23,8 @@ Progress:
 * [x] Text attributes (bold, underline, italic, tabbed, sub & sup script) 
 * [x] Images
 * [x] Images - inline (new!)
-* [ ] Lists
-* [ ] Hyperlinks
+* [x] Lists
+* [x] Hyperlinks
 * [ ] Tables
 * [ ] Word Styles
 * [ ] Textboxes

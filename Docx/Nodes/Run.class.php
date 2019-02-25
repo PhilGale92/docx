@@ -101,7 +101,7 @@ class Run extends RunDrawingLib {
          */
         $this->_setProcessedRun($processedRun ) ;
         foreach ($this->_runElementNode->childNodes as $childNode){
-            $subRun = new self($docx, $childNode, $processedRun);
+            $subRun = new self($docx, $childNode);
             if ($subRun->isValid()){
                 $this->_subRunStack[] = $subRun;
             }
@@ -191,5 +191,15 @@ class Run extends RunDrawingLib {
         }
         $ret .= $retArr['append'];
         return $ret;
+    }
+
+    /**
+     * @desc Clears docx handler from this object and its stack, after the parse has concluded
+     */
+    public function unsetHelpers(){
+        unset($this->_docx);
+        foreach ($this->_subRunStack as $run){
+            $run->unsetHelpers();
+        }
     }
 }

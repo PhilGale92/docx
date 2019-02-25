@@ -102,7 +102,55 @@ class Docx extends DocxFileManipulation {
                     break;
             }
         }
+        $this->_listPostProcessor();
     }
+
+    /**
+     * @desc Modifies $this->>_constructed nodes, and finds the relevant list tags
+     * and modifies the sibling nodes prepend/append attributes as needed
+     */
+    protected function _listPostProcessor(){
+        $currentListLevel = 0;
+        foreach ($this->_constructedNodes as $i =>  $node ) {
+            /*
+             * Override the node type
+             */
+            if ($node->getListLevel() > 0) $node->setType('listitem');
+            /*
+             * Get class attribute (if any)
+             */
+            $liClassStr = '';
+            if (is_object($node->getStyle())){
+                $styleData = $node->getStyle();
+                if ($styleData->getHtmlClass() != '')
+                    $liClassStr = ' class="' . $styleData->getHtmlClass() . '"';
+            }
+
+            /*
+             * List tag calculations
+             */
+            if ($currentListLevel > $node->getListLevel()){
+                for ($loopI = $currentListLevel; $loopI > $node->getListLevel(); $loopI--){
+                    $this->_constructedNodes[$i - 1]->appendAdditional('</li></ul>');
+                }
+            } else {
+                if ($currentListLevel > 0 && $currentListLevel == $node->getListLevel()) {
+                    $this->_constructedNodes[$i - 1]->appendAdditional('</li>');
+                }
+            }
+            if ($currentListLevel < $node->getListLevel()){
+                for ($loopI = $currentListLevel; $loopI < $node->getListLevel(); $loopI++){
+                    $node->prependAdditional('<ul><li' . $liClassStr . '>');
+                }
+            } else {
+                if ($currentListLevel > 0  ) {
+                    $node->prependAdditional('<li' . $liClassStr . '>');
+                }
+            }
+            $currentListLevel = $node->getListLevel();
+        }
+    }
+
     /**
      * @desc Attaches a given Node to $this
      * @param $nodeObj Nodes\Node

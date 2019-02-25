@@ -205,6 +205,10 @@ abstract class Node {
      */
    public function attachToDocx($docx){
        unset ( $this->_docx);
+       foreach ($this->_run as $run){
+           $run->unsetHelpers();
+
+       }
        $docx->attachNode($this ) ;
    }
 
@@ -220,6 +224,45 @@ abstract class Node {
        if ($styleQuery->length != 0)
            $style = $styleQuery->item(0)->getAttribute('w:val');
        return \Docx\Style::getFromStyleName($style) ;
+   }
+
+    /**
+     * @return int
+     * @desc Exposes list level for the list-post processing stage
+     */
+   public function getListLevel(){
+       return $this->listLevel;
+   }
+
+    /**
+     * @return \Docx\Style|null
+     */
+   public function getStyle(){
+       return $this->_wordStyle;
+   }
+
+    /**
+     * @param $typeString string
+     * @desc Allows you to override $this->type
+     */
+   public function setType($typeString){
+       $this->type = $typeString;
+   }
+
+    /**
+     * @param $additionalString string
+     * @desc Exposes ->prepend, but adds to it
+     */
+   public function prependAdditional($additionalString){
+       $this->_prependOutput = $additionalString . $this->_prependOutput;
+   }
+
+    /**
+     * @param $additionalString string
+     * @desc Exposes ->append, but adds to it
+     */
+   public function appendAdditional($additionalString){
+       $this->_appendOutput .= $additionalString;
    }
 
 }
