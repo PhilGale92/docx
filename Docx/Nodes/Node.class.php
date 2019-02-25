@@ -55,7 +55,7 @@ abstract class Node {
     /**
      * @var string
      */
-    protected $type = '';
+    protected $_type = '';
 
     /**
      * Node constructor.
@@ -68,7 +68,7 @@ abstract class Node {
        $this->_wordStyle = $this->_getStyle( $this->_domElement ) ;
 
        $this->_extender( $docx );
-       $this->type = $domElement->nodeName;
+       $this->_type = $domElement->nodeName;
    }
 
     /**
@@ -116,7 +116,7 @@ abstract class Node {
         $ret = $this->_prependOutput;
         $elementPrepend = $elementAppend = $idAttr = '';
 
-        if ($this->type == 'w:p'){
+        if ($this->_type == 'w:p'){
             if (is_object( $this->_wordStyle)){
                 if ($this->_wordStyle->getFlagGenerateHtmlId()){
                     # Compile the text from the runarr without the prepend / appending
@@ -152,7 +152,7 @@ abstract class Node {
        /*
         * Run table sys. injection
         */
-       if ($this->type == 'w:tbl'){
+       if ($this->_type == 'w:tbl'){
            /**
             * @var $this Table
             */
@@ -223,10 +223,10 @@ abstract class Node {
 
     /**
      * @param $typeString string
-     * @desc Allows you to override $this->type
+     * @desc Allows you to override $this->_type
      */
    public function setType($typeString){
-       $this->type = $typeString;
+       $this->_type = $typeString;
    }
 
     /**
