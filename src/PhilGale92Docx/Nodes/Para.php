@@ -22,11 +22,33 @@ class Para extends Node {
             $listLevel = (int) $listQuery->item(0)->getAttribute('w:val') + 1;
         }
 
+        $numIdQuery = $this->_docx->getXPath()->query("w:pPr/w:numPr/w:numId", $this->_domElement);
+        $listType = $this::LIST_TYPE_BULLET;
+
+        if ($numIdQuery->length > 0 ){
+            $numIdItem = $numIdQuery->item(0);
+            foreach ($numIdItem->attributes as $attribute){
+                /**
+                 * @var $attribute \DOMAttr
+                 */
+                if ($attribute->nodeName == 'w:val'){
+                    /*
+                     * Found relevant attribute!
+                     */
+                    if (is_numeric($attribute->nodeValue)){
+                        $listType = $this::LIST_TYPE_NUMBER;
+                    } else {
+                        $listType = $this::LIST_TYPE_LETTER;
+                    }
+                    break;
+                }
+            }
+        }
+
         # If the style list info is NOT 0, then override the openXml iteration
         if ($this->_wordStyle->getListLevel() > 0 ) {
             $listLevel = $this->_wordStyle->getListLevel();
         }
-
 
         # Run through text runs & hyperlinks
         foreach ($this->_domElement->childNodes as $childNode){
@@ -43,6 +65,7 @@ class Para extends Node {
 
         $this->_indent = $indent;
         $this->_listLevel = $listLevel;
+        $this->_listType = $listType;
 
 
     }

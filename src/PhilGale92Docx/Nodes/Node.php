@@ -14,6 +14,10 @@ use PhilGale92Docx\Docx;
  */
 abstract class Node {
 
+    const LIST_TYPE_BULLET = 'bulletlist';
+    const LIST_TYPE_NUMBER = 'numberedlist';
+    const LIST_TYPE_LETTER = 'alphalist';
+
     /**
      * @var null | \DOMElement
      */
@@ -31,6 +35,11 @@ abstract class Node {
      * @var int
      */
    protected $_listLevel = 0;
+    /**
+     * @var self::LIST_TYPE_BULLET | self::LIST_TYPE_NUMBER | self::LIST_TYPE_LETTER
+     */
+   protected $_listType = self::LIST_TYPE_BULLET;
+
     /**
      * @var string
      */
