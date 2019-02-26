@@ -80,10 +80,10 @@ span.indent {
 
 ### Progress: ### 
 
+* [x] Rewritten element loader (to respect element order properly...)
 * [x] Paragraphs (basic text)
 * [x] Text attributes (bold, underline, italic, tabbed, sub & sup script) 
 * [x] Images
-* [x] Images - inline (new!)
 * [x] Lists
 * [x] Hyperlinks
 * [x] Tables (colspans, vertical merged cells etc)
