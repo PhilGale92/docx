@@ -11,7 +11,7 @@ Composer: `composer require philgale92/docx`
 Manual: Files within `src` follow the PSR-0 format.
 
 
-### Supports / Progress: ### 
+### Supports ### 
 
 * [x] Rewritten element loader (to respect element order properly...)
 * [x] Paragraphs (basic text)
@@ -32,7 +32,7 @@ Manual: Files within `src` follow the PSR-0 format.
 /*
 * Create the parse object which converts the file into internalised objects
 */
-$parser = new PhilGale92Docx\Docx($absolutePathToDocxFile );
+$parser = new \PhilGale92Docx\Docx($absolutePathToDocxFile );
 
 /*
 * Now render the parser into html string  
@@ -87,12 +87,14 @@ span.indent {
 
 ### Requirements: ### 
 
-- PHP >= 5.4 supported
+- PHP >= 5.4 
+
 
 ====
 
 ### Whats new (v1->v2) ###
 
+* Plugged into composer (psr-0)
 * Refactored the architecture to be easier to maintain, and be properly OOP.
 * Proper priv/prot/public usage.
 * Removed all dynamically set properties in all objects
