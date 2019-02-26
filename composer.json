@@ -1,8 +1,21 @@
 {
+    "name": "philgale92/docx",
+    "description": "PHP Based Docx Parser",
+    "type": "library",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Phil Gale",
+            "email": "phil.gale92@gmail.com"
+        }
+    ],
+    "minimum-stability": "dev",
     "require": {
-		
+        "php": ">=5.4.0"
     },
-    "require-dev": {
-        "phpunit/phpunit": "5.*"
+    "autoload": {
+        "psr-0": {
+            "Docx": "src/"
+        }
     }
 }
