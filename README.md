@@ -6,7 +6,14 @@ Docx Parser
 
 ### Installation ###
 
-Composer: `composer require philgale92/docx`
+Composer (cli): `composer require philgale92/docx:2.*`
+
+Composer (file):  Add the following to your `composer.json` file: 
+````
+    "require": {
+        "philgale92/docx": "2.*"
+    }
+````
 
 Manual: Files within `src` follow the PSR-0 format.
 
