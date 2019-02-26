@@ -293,8 +293,10 @@ class Table extends Node {
             $startI = 0 ;
             $mergedCellCount = 0 ;
             foreach ($rowXV as $ii => $cellXV ) {
-                if ($cellXV['colSpan'] > 1) $bColSpansUsed = true;
-                $rowSpacer += $cellXV['colSpan'];
+                $colSpanVal = 1;
+                if (isset($cellXV['colSpan'])) $colSpanVal = $cellXV['colSpan'];
+                if ($colSpanVal > 1) $bColSpansUsed = true;
+                $rowSpacer += $colSpanVal;
                 if ($cellXV != null ) $startI = $ii;
             }
             if ($bColSpansUsed ) {
