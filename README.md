@@ -18,6 +18,13 @@ Docx Parser
 
 ====
 
+### Installation ###
+
+Composer: `composer require philgale92/docx`
+
+Manual: Files within `src` follow the PSR-0 format.
+
+
 ### USAGE ### 
 
 ````php
