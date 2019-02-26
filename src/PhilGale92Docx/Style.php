@@ -5,7 +5,7 @@
  * Date: 30/04/2018
  * Time: 12:11
  */
-namespace Docx;
+namespace PhilGale92Docx;
 /**
  * Class Style
  * @package PhilGale92Docx
