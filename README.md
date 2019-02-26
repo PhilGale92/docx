@@ -4,7 +4,7 @@ Docx Parser
 **A PHP Based Docx Parser**
 
 
-*Whats new?* 
+### Whats new (v1->v2) ###
 
 * Refactored the architecture to be easier to maintain, and be properly OOP.
 * Proper priv/prot/public usage.
@@ -18,7 +18,7 @@ Docx Parser
 
 ====
 
-###USAGE ###
+### USAGE ### 
 
 ````php
     
@@ -78,7 +78,8 @@ span.indent {
 
 ====
 
-Progress: 
+### Progress: ### 
+
 * [x] Paragraphs (basic text)
 * [x] Text attributes (bold, underline, italic, tabbed, sub & sup script) 
 * [x] Images
@@ -93,7 +94,6 @@ Progress:
 
 ====
 
-
-Requirements:
+### Requirements: ### 
 
 - PHP >= 5.4 supported
