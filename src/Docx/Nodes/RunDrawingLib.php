@@ -6,15 +6,15 @@
  * Time: 14:59
  */
 
-namespace Docx\Nodes ;
+namespace PhilGale92Docx\Nodes ;
 /**
  * Class RunDrawingLib
- * @package Docx\Nodes
+ * @package PhilGale92Docx\Nodes
  * @desc Library for Run handlers for drawing (img) extraction from xml
  */
 abstract class RunDrawingLib {
     /**
-     * @var null | \Docx\Docx
+     * @var null | \PhilGale92Docx\Docx
      *
      */
     protected $_docx = null;
@@ -24,7 +24,7 @@ abstract class RunDrawingLib {
     protected $_runElementNode = null;
 
     /**
-     * @return \Docx\FileAttachment|null
+     * @return \PhilGale92Docx\FileAttachment|null
      */
     protected function _loadDrawingData(){
         # Get the blipFill for the imageRefId

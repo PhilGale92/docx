@@ -5,12 +5,12 @@
  * Date: 29/04/2018
  * Time: 16:48
  */
-namespace Docx;
+namespace PhilGale92Docx;
 /**
  * Class DocxFileManipulation
  * @desc The purpose of this class, is pulling the xml structure out,
  * while preparing external references
- * @package Docx
+ * @package PhilGale92Docx
  */
 abstract class DocxFileManipulation {
     /**

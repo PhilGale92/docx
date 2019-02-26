@@ -5,7 +5,7 @@
  * Date: 29/04/2018
  * Time: 18:39
  */
-namespace Docx;
+namespace PhilGale92Docx;
 class LinkAttachment {
     /**
      * @var string

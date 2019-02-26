@@ -6,10 +6,10 @@
  * Time: 11:21
  */
 
-namespace Docx\Nodes;
+namespace PhilGale92Docx\Nodes;
 /**
  * Class Run
- * @package Docx\Nodes
+ * @package PhilGale92Docx\Nodes
  * @desc Run is used to manage the contents that is being injected into the actual Nodes/Node object so that we can pull
  * in the different levels of drawings and other forms of content etc
  * content that goes into the node
@@ -33,8 +33,8 @@ class Run extends RunDrawingLib {
 
     /**
      * Run constructor.
-     * @param $docx \Docx\Docx
-     * @param runElementNode  \DOMElement
+     * @param $docx \PhilGale92Docx\Docx
+     * @param $runElementNode  \DOMElement
      */
     public function __construct($docx, $runElementNode)
     {

@@ -5,16 +5,16 @@
  * Date: 29/04/2018
  * Time: 16:47
  */
-namespace Docx ;
-use Docx\Nodes\Node;
-use Docx\Nodes\Para;
-use Docx\Nodes\Table;
+namespace PhilGale92Docx ;
+use PhilGale92Docx\Nodes\Node;
+use PhilGale92Docx\Nodes\Para;
+use PhilGale92Docx\Nodes\Table;
 
 /**
  * Class Docx
  * @desc Prepares xPath & domDocument for loaded .docx file,
  * and processes elements into internal Node & Run objects
- * @package Docx
+ * @package PhilGale92Docx
  */
 class Docx extends DocxFileManipulation {
     /**

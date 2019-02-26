@@ -8,7 +8,7 @@
 namespace Docx;
 /**
  * Class Style
- * @package Docx
+ * @package PhilGale92Docx
  */
 class Style {
     /**

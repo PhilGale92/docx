@@ -5,11 +5,11 @@
  * Date: 21/02/2019
  * Time: 10:28
  */
-namespace Docx\Nodes;
+namespace PhilGale92Docx\Nodes;
 class Para extends Node {
 
     /**
-     * @param \Docx\Docx $docx
+     * @param \PhilGale92Docx\Docx $docx
      */
     protected function _extender( $docx ){
 

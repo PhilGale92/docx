@@ -5,12 +5,12 @@
  * Date: 22/02/2019
  * Time: 10:25
  */
-namespace Docx\Nodes;
-use Docx\FileAttachment;
+namespace PhilGale92Docx\Nodes;
+use PhilGale92Docx\FileAttachment;
 
 /**
  * Class ProcessedRun
- * @package Docx\Nodes
+ * @package PhilGale92Docx\Nodes
  */
 class ProcessedRun {
     /**

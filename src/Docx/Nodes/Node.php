@@ -5,12 +5,12 @@
  * Date: 29/04/2018
  * Time: 18:49
  */
-namespace Docx\Nodes;
-use Docx\Docx;
+namespace PhilGale92Docx\Nodes;
+use PhilGale92Docx\Docx;
 
 /**
  * Class Node
- * @package Docx
+ * @package PhilGale92Docx
  */
 abstract class Node {
 
@@ -19,7 +19,7 @@ abstract class Node {
      */
     protected $_domElement = null;
     /**
-     * @var null | \Docx\Docx
+     * @var null | \PhilGale92Docx\Docx
      */
    protected $_docx = null;
 
@@ -41,7 +41,7 @@ abstract class Node {
    protected $_appendOutput = '';
 
     /**
-     * @var null | \Docx\Style
+     * @var null | \PhilGale92Docx\Style
      * @desc Tracks the discovered word style of the given node
      */
     protected $_wordStyle = null;
@@ -59,7 +59,7 @@ abstract class Node {
 
     /**
      * Node constructor.
-     * @param $docx \Docx\Docx
+     * @param $docx \PhilGale92Docx\Docx
      * @param $domElement \DOMElement
      */
    final public function __construct($docx, $domElement){
@@ -72,7 +72,7 @@ abstract class Node {
    }
 
     /**
-     * @param \Docx\Docx $docx
+     * @param \PhilGale92Docx\Docx $docx
      * @stub
      */
    protected function _extender( $docx ){
@@ -178,7 +178,7 @@ abstract class Node {
 
     /**
      * @desc Integrates this Node object, into the Docx
-     * @param $docx \Docx\Docx
+     * @param $docx \PhilGale92Docx\Docx
      * @param bool $bRunAttachmentToRoot
      */
    public function attachToDocx($docx, $bRunAttachmentToRoot = true ){
@@ -195,7 +195,7 @@ abstract class Node {
 
     /**
      * @param null DomElement $domElement
-     * @return \Docx\Style
+     * @return \PhilGale92Docx\Style
      */
    protected function _getStyle($domElement = null ) {
        if ($domElement == null ) $domElement = $this->_domElement;
@@ -203,7 +203,7 @@ abstract class Node {
        $style = '';
        if ($styleQuery->length != 0)
            $style = $styleQuery->item(0)->getAttribute('w:val');
-       return \Docx\Style::getFromStyleName($style) ;
+       return \PhilGale92Docx\Style::getFromStyleName($style) ;
    }
 
     /**
@@ -215,7 +215,7 @@ abstract class Node {
    }
 
     /**
-     * @return \Docx\Style|null
+     * @return \PhilGale92Docx\Style|null
      */
    public function getStyle(){
        return $this->_wordStyle;

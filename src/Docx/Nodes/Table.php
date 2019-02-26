@@ -5,10 +5,10 @@
  * Date: 25/02/2019
  * Time: 12:12
  */
-namespace Docx\Nodes;
+namespace PhilGale92Docx\Nodes;
 /**
  * Class Table
- * @package Docx\Nodes
+ * @package PhilGale92Docx\Nodes
  */
 class Table extends Node {
     /**
@@ -34,7 +34,7 @@ class Table extends Node {
 
 
     /**
-     * @param \Docx\Docx $docx
+     * @param \PhilGale92Docx\Docx $docx
      */
     protected function _extender( $docx ){
         $this->_tableGrid = $this->_drawTableGrid();
