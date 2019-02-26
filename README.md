@@ -25,7 +25,7 @@ Docx Parser
 /*
 * Create the parse object which converts the file into internalised objects
 */
-$parser = new Docx\Docx($absolutePathToDocxFile );
+$parser = new PhilGale92Docx\Docx($absolutePathToDocxFile );
 
 /*
 * Now render the parser into html string  
