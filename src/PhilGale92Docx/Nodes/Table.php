@@ -59,7 +59,7 @@ class Table extends Node {
      */
     protected function _renderCell($cellElement, $renderFormat = 'html'){
         # Run through text runs & hyperlinks
-        $cellNodes = $this->_docx->loadNodesFromElement($cellElement, false );
+        $cellNodes = $this->_docx->loadNodesFromElement($cellElement );
         $ret = '';
         foreach ($cellNodes as $cellNode ) {
             $ret .= $cellNode->render($renderFormat);

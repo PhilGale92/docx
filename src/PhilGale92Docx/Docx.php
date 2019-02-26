@@ -74,7 +74,7 @@ class Docx extends DocxFileManipulation {
         $bodyElementResult = $xPath->query('//w:body'); // //w:drawing | //w:txbxContent | //w:tbl | //w:p'
         if ($bodyElementResult->length > 0 ) {
             $bodyElement = $bodyElementResult->item(0 ) ;
-            $this->loadNodesFromElement($bodyElement) ;
+            $this->loadNodesFromElement($bodyElement, true ) ;
         } else {
             throw new \Exception('No Body element found');
         }
@@ -85,9 +85,11 @@ class Docx extends DocxFileManipulation {
     /**
      * @param $domElement \DOMElement
      * @param bool $bIsFromRootElement
+     *  If set to TRUE, elements are automatically tagged to parent Docx object,
+     *  its set to false if the relevant Node is self-handling its elements
      * @return Node[]
      */
-    public function loadNodesFromElement($domElement, $bIsFromRootElement = true ){
+    public function loadNodesFromElement($domElement, $bIsFromRootElement = false ){
         $ret = [];
         foreach ($domElement->childNodes as $childNode){
             /**
