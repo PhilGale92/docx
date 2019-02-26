@@ -56,17 +56,24 @@ td, th {
     padding-left: 6px;
     position: relative;
 }
-td.has_subcell  {padding-left:0;}
-table table { width:100%; }
+td.has_subcell  {
+    padding-left:0;
+}
+table table {
+    width:100%;
+}
 td td {
     height:72px;  
     border:none;
     border-bottom:1px solid black; 
     min-width:110px;
 } 
-td table tr:last-of-type td { border-bottom:0;}
-.vmerge td {  }
-span.indent { padding-left:36px;} 
+td table tr:last-of-type td {
+    border-bottom:0;
+}
+span.indent {
+    padding-left:36px;
+} 
 ````
 
 ====
