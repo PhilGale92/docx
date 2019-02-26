@@ -45,11 +45,14 @@ class Style {
 
     /**
      * @param $styleName string
+     * @TODO - this cannot construct, needs to load from docx object
      * @return Style
      */
     public static function getFromStyleName($styleName){
         return new Style($styleName);
     }
+
+
 
 
     /**

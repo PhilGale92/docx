@@ -20,12 +20,17 @@ abstract class DocxFileManipulation {
     private $_baseUri = '';
     /**
      * @var string
-     * @desc RAW Docx XML
+     * @desc Raw structure & content XML
      */
     protected $_xmlStructure = '';
     /**
      * @var string
-     * @desc Raw XML structure of relationships
+     * @desc Raw Style info XML
+     */
+    protected $_xmlStyles = '';
+    /**
+     * @var string
+     * @desc Raw Relationship XML
      */
     protected $_xmlRelations = '';
     /**
@@ -38,6 +43,11 @@ abstract class DocxFileManipulation {
      * @desc Track external reference based links
      */
     protected $_linkAttachments = [] ;
+
+    /**
+     * @var string[]
+     */
+    protected $_declaredStyles = [];
 
     /**
      * @var bool|null
@@ -76,8 +86,10 @@ abstract class DocxFileManipulation {
 
             if ($entryName == 'word/_rels/document.xml.rels'){
                 $this->_xmlRelations = zip_entry_read($zipEntry, zip_entry_filesize($zipEntry));
-            } else if ($entryName == 'word/document.xml'){
+            } else if ($entryName == 'word/document.xml') {
                 $this->_xmlStructure = zip_entry_read($zipEntry, zip_entry_filesize($zipEntry));
+            } else if ($entryName == 'word/styles.xml' ){
+                $this->_xmlStyles = zip_entry_read($zipEntry, zip_entry_filesize($zipEntry));
             } else if (strpos($entryName, 'word/media') !== false ) {
                 # Removes 'word/media' prefix
                 $imageName = substr($entryName, 11);
@@ -99,14 +111,17 @@ abstract class DocxFileManipulation {
             zip_entry_close($zipEntry) ;
         }
         zip_close($zipArchive ) ;
+
+
         $this->_processRelationships()  ;
+        $this->_processStyleInfo();
     }
 
     /**
      * @desc Process the xmlRelations into link
      * mappings, and pull out any additional image data that is available !
      */
-    private function _processRelationships(){
+    protected function _processRelationships(){
         if ($this->_xmlRelations != '') {
             $dom = new \DOMDocument();
             $dom->loadXML($this->_xmlRelations, LIBXML_NOENT | LIBXML_XINCLUDE | LIBXML_NOERROR | LIBXML_NOWARNING);
@@ -135,4 +150,37 @@ abstract class DocxFileManipulation {
             }
         }
     }
+
+    /**
+     * @desc Process the style info
+     */
+    protected function _processStyleInfo(){
+        $dom = new \DOMDocument();
+        $dom->loadXML($this->_xmlStyles, LIBXML_NOENT | LIBXML_XINCLUDE | LIBXML_NOERROR | LIBXML_NOWARNING);
+        $dom->encoding = 'utf-8';
+        $styleElements = $dom->getElementsByTagName('style');
+        foreach ($styleElements as $styleElement ) {
+            /**
+             * @var $styleElement \DOMElement
+             */
+            $validStyleCore = 0;
+            $styleId = null;
+            foreach ($styleElement->attributes as $attribute){
+                /**
+                 * @var $attribute \DOMAttr
+                 */
+                if ($attribute->nodeName == 'w:customStyle' && $attribute->nodeValue == 1) {
+                    $validStyleCore++;
+                }
+                if ($attribute->nodeName == 'w:styleId' && $attribute->nodeValue != ''){
+                    $styleId = $attribute->nodeValue;
+                    $validStyleCore++;
+                }
+            }
+            if ( $validStyleCore < 2) continue;
+            $this->_declaredStyles[] = $styleId;
+        }
+
+    }
+
 }
