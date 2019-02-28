@@ -69,7 +69,7 @@ abstract class Node {
     /**
      * Node constructor.
      * @param $docx \PhilGale92Docx\Docx
-     * @param $domElement \DOMElement
+     * @param $domElement  \DOMElement | null
      */
    final public function __construct($docx, $domElement){
        $this->_docx = $docx;
@@ -77,7 +77,12 @@ abstract class Node {
        $this->_wordStyle = $this->_getStyle( $this->_domElement ) ;
 
        $this->_extender( $docx );
-       $this->_type = $domElement->nodeName;
+
+       if ($domElement == null ) {
+           $this->_type = 'undefined';
+       } else {
+           $this->_type = $domElement->nodeName;
+       }
    }
 
     /**

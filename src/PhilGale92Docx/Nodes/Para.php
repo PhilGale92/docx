@@ -49,6 +49,12 @@ class Para extends Node {
         if ($this->_wordStyle->getListLevel() > 0 ) {
             $listLevel = $this->_wordStyle->getListLevel();
         }
+        if ($this->_wordStyle->getListHtmlTag() != null){
+            if ($this->_wordStyle->getListHtmlTag() == 'ol')
+                $listType = $this::LIST_TYPE_NUMBER;
+            else
+                $listType = $this::LIST_TYPE_BULLET;
+        }
 
         # Run through text runs & hyperlinks
         foreach ($this->_domElement->childNodes as $childNode){

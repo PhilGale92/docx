@@ -24,6 +24,10 @@ class Style {
      * @var int
      */
     protected $_listLevel = 0;
+    /**
+     * @var string
+     */
+    protected $_listHtmlTag = null ;
 
     /**
      * @var string
@@ -34,6 +38,16 @@ class Style {
      * @var bool
      */
     protected $_flagSelfGenerateHtmlId = false;
+    /**
+     * @var bool
+     * @desc Set to true to box out similar siblings with the same style in a div with
+     * a class of 'boxHtmlClass'
+     */
+    protected $_flagBoxSimilarSiblings = false;
+    /**
+     * @var string
+     */
+    protected $_boxHtmlClass = '';
 
     /**
      * @var bool
@@ -100,10 +114,30 @@ class Style {
     }
 
     /**
+     * @return string | null
+     */
+    public function getListHtmlTag(){
+        return $this->_listHtmlTag;
+    }
+
+    /**
      * @return string
      */
     public function getMetaDataRenderMode(){
         return $this->_metaDataRenderMode;
+    }
+    /**
+     * @return bool
+     */
+    public function getBoxSimilarSiblings(){
+        return $this->_flagBoxSimilarSiblings;
+    }
+
+    /**
+     * @return string
+     */
+    public function getBoxClassName(){
+        return $this->_boxHtmlClass;
     }
 
     /**
@@ -142,7 +176,58 @@ class Style {
         return $this;
     }
 
+    /**
+     * @param $classAttrib string
+     * @return $this
+     */
+    public function setHtmlClass($classAttrib){
+        $this->_htmlCssClass = $classAttrib;
+        return $this;
+    }
 
+    /**
+     * @param $tagAttrib string
+     * @return $this
+     */
+    public function setHtmlTag($tagAttrib){
+        $this->_htmlTagName = $tagAttrib;
+        return $this;
+    }
 
+    /**
+     * @param $listLevel int
+     * @return $this
+     */
+    public function setListLevel($listLevel){
+        $this->_listLevel = $listLevel;
+        return $this ;
+    }
+
+    /**
+     * @param $toggle bool
+     * @return $this
+     */
+    public function setBoxSimilarSiblings($toggle){
+        $this->_flagBoxSimilarSiblings = $toggle;
+        return $this;
+    }
+
+    /**
+     * @param $classAttrib string
+     * @return $this
+     */
+    public function setBoxClassName($classAttrib){
+        $this->_boxHtmlClass = $classAttrib;
+        return $this;
+    }
+
+    /**
+     * @param $tagAttrib string
+     * @return $this
+     */
+    public function setListHtmlTag($tagAttrib){
+        $this->_listHtmlTag = $tagAttrib;
+        return $this;
+    }
 
 }

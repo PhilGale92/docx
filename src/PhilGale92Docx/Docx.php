@@ -120,8 +120,10 @@ class Docx extends DocxFileManipulation {
             }
         }
 
-        $ret = $this->_parseMetaDataStyles($ret ) ;
+        $ret = $this->_parseMetaDataStylesPostProcessor($ret ) ;
         $ret  = $this->_listPostProcessor( $ret );
+        $ret = $this->_boxWrapPostProcessor($ret ) ;
+
 
         /*
          * Ensure if we're working on the root level,
@@ -140,7 +142,7 @@ class Docx extends DocxFileManipulation {
      * @param $nodeArr Node[]
      * @return Node[]
      */
-    protected function _parseMetaDataStyles( $nodeArr ){
+    protected function _parseMetaDataStylesPostProcessor( $nodeArr ){
         foreach ($nodeArr as $i => $node){
             $style = $node->getStyle() ;
             if ($style->getIsMetaData()){
@@ -163,46 +165,112 @@ class Docx extends DocxFileManipulation {
      * @return Node[]
      */
     protected function _listPostProcessor($nodeArr ){
-        $currentListLevel = 0;
+        $prevListLevel = 0;
+
+        /*
+         * Check the last item if it has an indent level we need to ensure another iteration occurs !
+         */
+        if (!empty($nodeArr)) {
+            $nodeEnd = end($nodeArr);
+            if ($nodeEnd->getListLevel() > 0 ) {
+                $fauxItem = new Nodes\FauxList(
+                    $this, null
+                );
+
+                $nodeArr[] = $fauxItem ;
+            }
+        }
+
         foreach ($nodeArr as $i =>  $node ) {
+            $currentListTag = 'ul';
             /*
              * Override the node type
              */
-            if ($node->getListLevel() > 0) $node->setType('listitem');
+            if ($node->getListLevel() > 0) {
+                $node->setType('listitem');
+            }
             /*
              * Get class attribute (if any)
              */
-            $liClassStr = '';
+            $classInject = '';
             if (is_object($node->getStyle())){
                 $styleData = $node->getStyle();
+                if ($node->getListLevel() > 0) {
+                    if ($styleData->getListHtmlTag() !== null ) {
+                        $currentListTag = $styleData->getListHtmlTag();
+                    }
+                }
                 if ($styleData->getHtmlClass() != '')
-                    $liClassStr = ' class="' . $styleData->getHtmlClass() . '"';
+                    $classInject = $styleData->getHtmlClass() . '"';
+            }
+
+
+            $liClassStr = '';
+            if ($classInject != ''){
+                $liClassStr = ' class="' . $classInject . '"';
             }
 
             /*
              * List tag calculations
              */
-            if ($currentListLevel > $node->getListLevel()){
-                for ($loopI = $currentListLevel; $loopI > $node->getListLevel(); $loopI--){
-                    $nodeArr[$i - 1]->appendAdditional('</li></ul>');
+            if ($prevListLevel > $node->getListLevel()){
+                for ($loopI = $prevListLevel; $loopI > $node->getListLevel(); $loopI--){
+                    $last = array_pop($listTagStack);
+
+                    $nodeArr[$i - 1]->appendAdditional('</li></' .  $last . '>');
                 }
             } else {
-                if ($currentListLevel > 0 && $currentListLevel == $node->getListLevel()) {
+                if ($prevListLevel > 0 && $prevListLevel == $node->getListLevel()) {
                     $nodeArr[$i - 1]->appendAdditional('</li>');
                 }
             }
-            if ($currentListLevel < $node->getListLevel()){
-                for ($loopI = $currentListLevel; $loopI < $node->getListLevel(); $loopI++){
-                    $node->prependAdditional('<ul><li' . $liClassStr . '>');
+            if ($prevListLevel < $node->getListLevel()){
+                for ($loopI = $prevListLevel; $loopI < $node->getListLevel(); $loopI++){
+                    $listTagStack[] = $currentListTag ;
+                    $node->prependAdditional('<' . $currentListTag . '><li' . $liClassStr . '>');
                 }
             } else {
-                if ($currentListLevel > 0  ) {
+                if ($node->getListLevel() > 0  ) {
                     $node->prependAdditional('<li' . $liClassStr . '>');
                 }
             }
-            $currentListLevel = $node->getListLevel();
+            $prevListLevel = $node->getListLevel();
         }
+
         return $nodeArr;
+    }
+
+
+    /**
+     * @desc Wrap any nodes that are siblings with the same box Style attributes
+     * @param $nodeArr Node[]
+     * @return Node[]
+     */
+    protected function _boxWrapPostProcessor( $nodeArr ) {
+        $prevStyleBoxName = null;
+        $prevBoxIsOpen = false ;
+        foreach ($nodeArr as $i => $node) {
+            $style = $node->getStyle();
+
+            $currentBoxIsOpen = $style->getBoxSimilarSiblings();
+            $currentStyleBoxName = $style->getBoxClassName();
+
+            if ($currentStyleBoxName && $prevBoxIsOpen && $prevStyleBoxName != $currentStyleBoxName){
+                $nodeArr[$i - 1]->appendAdditional('</div>');
+            }
+
+            if ($currentBoxIsOpen && !$prevBoxIsOpen){
+                $node->prependAdditional('<div class="' . $currentStyleBoxName. '">');
+            } else if ($prevBoxIsOpen && !$currentBoxIsOpen) {
+                $nodeArr[$i - 1]->appendAdditional('</div>');
+
+            }
+
+            $prevStyleBoxName = $currentStyleBoxName;
+            $prevBoxIsOpen = $currentBoxIsOpen;
+        }
+
+        return $nodeArr ;
     }
 
     /**

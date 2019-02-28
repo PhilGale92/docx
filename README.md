@@ -51,6 +51,38 @@ $parser->addStyle(
     ->setMetaDataRenderMode(\PhilGale92Docx\Docx::RENDER_MODE_PLAIN)
 );
 
+/*
+ * Here is an example of a heading style
+ */
+$parser->addStyle(
+    (new \PhilGale92Docx\Style())
+    ->setStyleId('1HeadingStyle')
+    ->setHtmlTag('h2')
+    ->setHtmlClass('custom')
+);
+
+/*
+* Here is an example where we want to wrap all adjacent styles
+* of this name with a div
+*/
+$parser->addStyle(
+    (new \PhilGale92Docx\Style())
+    ->setStyleId('3Boxgreytint')
+    ->setBoxSimilarSiblings(true) // enable boxing behaviour
+    ->setBoxClassName('box-style-tint-grey') // class of wrapping div
+);
+
+/*
+ * You can also create word styles that make text lists
+ * this is in addition to the standard list detection
+*/
+$parser->addStyle(
+    (new \PhilGale92Docx\Style())
+    ->setStyleId('4Numberedlist')
+    ->setListHtmlTag('ol') // Takes 'ul' or 'ol'. 'ul' is default behaviour 
+    ->setListLevel(1) // the indentation level, must be > 0 
+);
+
 $parser->parse();
 
 /*
