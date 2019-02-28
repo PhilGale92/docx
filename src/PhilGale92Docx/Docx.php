@@ -144,7 +144,7 @@ class Docx extends DocxFileManipulation {
         foreach ($nodeArr as $i => $node){
             $style = $node->getStyle() ;
             if ($style->getIsMetaData()){
-                $this->_docxMetaData = new DocxMetaDataAttribute(
+                $this->_docxMetaData[] = new DocxMetaDataAttribute(
                     $style->getStyleId(),
                     $node,
                     $node->render($style->getMetaDataRenderMode())
