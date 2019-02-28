@@ -19,13 +19,13 @@ class DocxMetaDataAttribute {
      */
     protected $_baseStyleId = '';
     /**
-     * @var null | Node
-     */
-    protected $_internalNode = null;
-    /**
      * @var string
      */
     protected $_renderedContent = '';
+    /**
+     * @var null | Node
+     */
+    protected $_internalNode = null;
 
     /**
      * DocxMetaDataAttribute constructor.

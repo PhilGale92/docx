@@ -92,7 +92,19 @@ class Style {
     public function getStyleId(){
         return $this->_wordStyleId;
     }
+    /**
+     * @return bool
+     */
+    public function getIsMetaData(){
+        return $this->_isMetaDataStyle;
+    }
 
+    /**
+     * @return string
+     */
+    public function getMetaDataRenderMode(){
+        return $this->_metaDataRenderMode;
+    }
 
     /**
      * @param $styleId string
@@ -122,17 +134,15 @@ class Style {
     }
 
     /**
-     * @return bool
+     * @param $toggle bool
+     * @return $this
      */
-    public function getIsMetaData(){
-        return $this->_isMetaDataStyle;
+    public function setFlagGenerateHtmlId($toggle){
+        $this->_flagSelfGenerateHtmlId = $toggle;
+        return $this;
     }
 
-    /**
-     * @return string
-     */
-    public function getMetaDataRenderMode(){
-        return $this->_metaDataRenderMode;
-    }
+
+
 
 }

@@ -64,6 +64,11 @@ echo $parser
  */
 var_dump($parser->getMetaData());
 
+/*
+ * Are there any styles we forgot to declare?
+ */
+var_dump($parser->getDetectedStyles());
+
 
 ````
 

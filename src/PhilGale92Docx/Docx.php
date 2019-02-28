@@ -157,7 +157,7 @@ class Docx extends DocxFileManipulation {
     }
 
     /**
-     * @desc Modifies $this->>_constructed nodes, and finds the relevant list tags
+     * @desc Modifies passed nodes, and finds the relevant list tags
      * and modifies the sibling nodes prepend/append attributes as needed
      * @param $nodeArr Node[]
      * @return Node[]
@@ -307,4 +307,23 @@ class Docx extends DocxFileManipulation {
         return $this->_docxMetaData;
     }
 
+    /**
+     * @desc Gets a list of all detected missing styles,
+     * pass FALSE to get all
+     * @param $bOnlyMissing bool
+     * @return string[]
+     */
+    public function getDetectedStyles($bOnlyMissing = true ){
+        if ( ! $bOnlyMissing) return $this->_detectedStyles;
+
+        $ret = $this->_detectedStyles;
+        $declaredStyles = [];
+        foreach ($this->_declaredStyles as $style){
+            $declaredStyles[] = $style->getStyleId();
+        }
+        foreach ($ret as $i => $detectedStyle){
+            if (in_array($detectedStyle, $declaredStyles)) unset($ret[$i]);
+        }
+        return $ret ;
+    }
 }
