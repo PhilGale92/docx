@@ -83,6 +83,9 @@ $parser->addStyle(
     ->setListLevel(1) // the indentation level, must be > 0 
 );
 
+/*
+ * Now parse the xml into internal objects
+*/
 $parser->parse();
 
 /*
@@ -92,9 +95,11 @@ echo $parser
     ->render('html')
 ;
 /*
- * And grab any metaData content:
- */
-var_dump($parser->getMetaData());
+ * We can grab any metaData content after ->parse() is performed
+*/
+var_dump(
+    $parser->getMetaData() // also takes $styleId of metaData as an argument
+);
 
 /*
  * Are there any styles we forgot to declare?
