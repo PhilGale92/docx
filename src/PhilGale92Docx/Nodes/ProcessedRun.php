@@ -136,6 +136,14 @@ class ProcessedRun {
      */
     public function getProcessedText( $renderMode = Docx::RENDER_MODE_HTML){
         $rawText = $this->getRawText();
+
+        /*
+         * If we're writing to html, ensure the content is escaped from the tags!
+         */
+        if ($renderMode == Docx::RENDER_MODE_HTML){
+            $rawText = htmlentities($rawText);
+        }
+
         if ($this->_imageContent != null){
             $rawText .= $this->_imageContent->getImageHtmlTag();
         }
