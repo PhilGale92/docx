@@ -92,7 +92,7 @@ $parser->parse();
 * Now render the parser into html string  
 */
 echo $parser
-    ->render('html')
+    ->render(\PhilGale92Docx\Docx::RENDER_MODE_HTML)
 ;
 /*
  * We can grab any metaData content after ->parse() is performed
