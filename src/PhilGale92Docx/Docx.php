@@ -18,6 +18,19 @@ use PhilGale92Docx\Nodes\Table;
  */
 class Docx extends DocxFileManipulation {
     /**
+     * @desc Use 'html' to set the full render mode as html
+     */
+    const RENDER_MODE_HTML = 'html';
+    /**
+     * @desc Use 'plain' to avoid using any html specific classes / attributes
+     */
+    const RENDER_MODE_PLAIN = 'plain';
+
+    /**
+     * @var DocxMetaDataAttribute[]
+     */
+    protected $_docxMetaData = [];
+    /**
      * @var null  | \DOMXPath
      */
     protected $_xPath = null ;
@@ -29,11 +42,10 @@ class Docx extends DocxFileManipulation {
     protected $_constructedNodes = [];
 
     /**
-     * Docx constructor.
-     * @param $fileUri
+     * @desc Parses out internal node objects from the loaded XML structs
      */
-    public function __construct($fileUri){
-        parent::__construct($fileUri);
+    public function parse(){
+        parent::parse();
         try {
             $this->_loadNodes();
         } catch (\Exception $e) {
@@ -41,8 +53,6 @@ class Docx extends DocxFileManipulation {
             die;
         }
     }
-
-
 
     /**
      * @desc Pull out the primary data containers ( nodes ) that have different types depending on content type
@@ -106,14 +116,44 @@ class Docx extends DocxFileManipulation {
             }
             if (is_object($node)) {
                 $node->attachToDocx($this, $bIsFromRootElement );
-
                 $ret[] = $node;
             }
         }
 
+        $ret = $this->_parseMetaDataStyles($ret ) ;
         $ret  = $this->_listPostProcessor( $ret );
 
+        /*
+         * Ensure if we're working on the root level,
+         * we properly propagate the new node structure up
+         */
+        if ($bIsFromRootElement) {
+            $this->_constructedNodes = $ret ;
+        }
+
         return $ret ;
+    }
+
+    /**
+     * @desc Pull out any styles that are flagged as system, so we can populate
+     * the _systemContents arr
+     * @param $nodeArr Node[]
+     * @return Node[]
+     */
+    protected function _parseMetaDataStyles( $nodeArr ){
+        foreach ($nodeArr as $i => $node){
+            $style = $node->getStyle() ;
+            if ($style->getIsMetaData()){
+                $this->_docxMetaData = new DocxMetaDataAttribute(
+                    $style->getStyleId(),
+                    $node,
+                    $node->render($style->getMetaDataRenderMode())
+                );
+                unset($nodeArr[ $i ]);
+            }
+        }
+
+        return $nodeArr;
     }
 
     /**
@@ -178,7 +218,7 @@ class Docx extends DocxFileManipulation {
      * @param string $renderViewType
      * @return string
      */
-    public function render($renderViewType = 'html'){
+    public function render($renderViewType = self::RENDER_MODE_HTML){
         $ret = '';
         foreach ($this->_constructedNodes as $constructedNode){
             $ret .=  $constructedNode->render($renderViewType);
@@ -194,21 +234,6 @@ class Docx extends DocxFileManipulation {
         return $this->_xPath;
     }
 
-
-    /**
-     * @param $rawString string
-     * @desc Given a string, we process out any characters that cannot be output for an htmlId attribute
-     * @return string
-     */
-    public static function getHtmlIdFromString($rawString){
-        $ret = 'docx_' . $rawString;
-        $ret = str_replace(['&nbsp;', " "], ["", '_'], $ret);
-        $ret = trim(strip_tags($ret));
-        $ret = preg_replace("/[^A-Za-z0-9_]/", '', $ret);
-        return $ret;
-    }
-
-
     /**
      * @param string | null $linkupId
      * @return LinkAttachment[] | LinkAttachment
@@ -221,6 +246,7 @@ class Docx extends DocxFileManipulation {
         foreach ($this->_linkAttachments as $linkAttachment ){
             if ($linkAttachment->getLinkupId() == $linkupId) {
                 $ret = $linkAttachment;
+                break ;
             }
         }
         return $ret ;
@@ -238,20 +264,47 @@ class Docx extends DocxFileManipulation {
         foreach ($this->_fileAttachments as $fileAttachment) {
             if ($fileAttachment->getLinkupId() == $imageLinkupId){
                 $ret = $fileAttachment;
+                break ;
             }
         }
         return $ret;
     }
 
     /**
-     * @desc Converts internal docx measurment into px
-     * @param $twip int
-     * @return int
+     * @param $styleId string
+     * @return Style
      */
-    public function twipToPt($twip){
-        $px = round($twip / 20);
-        return $px;
+    public function getDeclaredStyleFromId($styleId){
+        $ret = null;
+        foreach ($this->_declaredStyles as $style ) {
+            if ($style->getStyleId() == $styleId){
+                $ret =  $style;
+                break;
+            }
+        }
+        if ($ret == null) $ret = new Style();
+        return $ret ;
     }
 
+
+    /**
+     * @param $style Style
+     * @desc Adds a Style object to docx,
+     * so we can customise html output depending on style templates
+     * @return $this
+     */
+    public function addStyle($style){
+        $this->_declaredStyles[] = $style;
+        return $this;
+    }
+
+    /**
+     * @desc Gets the system internal contents, that are populated from any styles where
+     *  ->setIsSystemStyle(true) is used
+     * @return DocxMetaDataAttribute[]
+     */
+    public function getMetaData(){
+        return $this->_docxMetaData;
+    }
 
 }

@@ -6,6 +6,7 @@
  * Time: 10:25
  */
 namespace PhilGale92Docx\Nodes;
+use PhilGale92Docx\Docx;
 use PhilGale92Docx\FileAttachment;
 
 /**
@@ -133,7 +134,7 @@ class ProcessedRun {
      * @param string $renderMode
      * @return array ['prepend', 'content', 'append']
      */
-    public function getProcessedText( $renderMode = 'html'){
+    public function getProcessedText( $renderMode = Docx::RENDER_MODE_HTML){
         $rawText = $this->getRawText();
         if ($this->_imageContent != null){
             $rawText .= $this->_imageContent->getImageHtmlTag();

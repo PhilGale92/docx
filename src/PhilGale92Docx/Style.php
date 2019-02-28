@@ -28,7 +28,7 @@ class Style {
     /**
      * @var string
      */
-    protected $_wordStyleName = '';
+    protected $_wordStyleId = '';
 
     /**
      * @var bool
@@ -36,24 +36,27 @@ class Style {
     protected $_flagSelfGenerateHtmlId = false;
 
     /**
-     * Style constructor.
-     * @param $wordStyleName string
+     * @var bool
+     * @desc Set to TRUE to remove styles from the standard html output,
+     * and move into the metaData attribute
      */
-    public function __construct($wordStyleName){
-        $this->_wordStyleName = $wordStyleName ;
-    }
+    protected $_isMetaDataStyle = false;
+
+    /**
+     * @var string
+     * @desc Used to set the render mode for any metaDataAttributes attached to this style
+     * set to 'html' or 'plain'
+     */
+    protected $_metaDataRenderMode = Docx::RENDER_MODE_HTML;
 
     /**
      * @param $styleName string
-     * @TODO - this cannot construct, needs to load from docx object
+     * @param $docx Docx
      * @return Style
      */
-    public static function getFromStyleName($styleName){
-        return new Style($styleName);
+    public static function getFromStyleName($styleName, $docx){
+        return $docx->getDeclaredStyleFromId($styleName);
     }
-
-
-
 
     /**
      * @return int
@@ -82,6 +85,54 @@ class Style {
      */
     public function getHtmlTag(){
         return $this->_htmlTagName;
+    }
+    /**
+     * @return string
+     */
+    public function getStyleId(){
+        return $this->_wordStyleId;
+    }
+
+
+    /**
+     * @param $styleId string
+     * @return $this
+     */
+    public function setStyleId($styleId){
+        $this->_wordStyleId = $styleId;
+        return $this;
+    }
+
+    /**
+     * @param $toggle bool
+     * @return $this
+     */
+    public function setIsMetaData($toggle){
+        $this->_isMetaDataStyle = $toggle;
+        return $this;
+    }
+
+    /**
+     * @param string $renderMode string
+     * @return $this
+     */
+    public function setMetaDataRenderMode($renderMode = Docx::RENDER_MODE_HTML){
+        $this->_metaDataRenderMode = $renderMode;
+        return $this;
+    }
+
+    /**
+     * @return bool
+     */
+    public function getIsMetaData(){
+        return $this->_isMetaDataStyle;
+    }
+
+    /**
+     * @return string
+     */
+    public function getMetaDataRenderMode(){
+        return $this->_metaDataRenderMode;
     }
 
 }

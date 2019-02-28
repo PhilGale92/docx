@@ -43,11 +43,14 @@ abstract class DocxFileManipulation {
      * @desc Track external reference based links
      */
     protected $_linkAttachments = [] ;
-
+    /**
+     * @var Style[]
+     */
+    protected $_declaredStyles = [];
     /**
      * @var string[]
      */
-    protected $_declaredStyles = [];
+    protected $_detectedStyles = [];
 
     /**
      * @var bool|null
@@ -56,11 +59,25 @@ abstract class DocxFileManipulation {
     private $_libXmlGlobalLoader = null ;
 
     /**
+     * @var string
+     */
+    private $_fileUri = '';
+
+    /**
      * DocxFileManipulation constructor.
-     * @param $fileUri
+     * @param $fileUri string
      */
     public function __construct($fileUri)
     {
+        $this->_fileUri = $fileUri;
+    }
+
+    /**
+     * @desc Extracts the xml dependencies from the file
+     */
+    public function parse()
+    {
+        $fileUri = $this->_fileUri;
         $this->_libXmlGlobalLoader  = libxml_disable_entity_loader( ) ;
         $this->_baseUri = $fileUri;
         $this->_extractArchives();
@@ -178,7 +195,7 @@ abstract class DocxFileManipulation {
                 }
             }
             if ( $validStyleCore < 2) continue;
-            $this->_declaredStyles[] = $styleId;
+            $this->_detectedStyles[] = $styleId;
         }
 
     }

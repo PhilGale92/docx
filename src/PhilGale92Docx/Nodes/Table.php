@@ -6,6 +6,8 @@
  * Time: 12:12
  */
 namespace PhilGale92Docx\Nodes;
+use PhilGale92Docx\Docx;
+
 /**
  * Class Table
  * @package PhilGale92Docx\Nodes
@@ -45,8 +47,8 @@ class Table extends Node {
      * @param string $renderMode
      * @return string
      */
-    public function getTableRender($renderMode = 'html'){
-        if ($renderMode == 'html'){
+    public function getTableRender($renderMode = Docx::RENDER_MODE_HTML){
+        if ($renderMode == Docx::RENDER_MODE_HTML){
             return $this->_tableHtml;
         }
         return '';
@@ -57,7 +59,7 @@ class Table extends Node {
      * @param string $renderFormat
      * @return string
      */
-    protected function _renderCell($cellElement, $renderFormat = 'html'){
+    protected function _renderCell($cellElement, $renderFormat = Docx::RENDER_MODE_HTML){
         # Run through text runs & hyperlinks
         $cellNodes = $this->_docx->loadNodesFromElement($cellElement );
         $ret = '';

@@ -92,7 +92,7 @@ abstract class Node {
      * @param string $renderMode
      * @return string
      */
-   protected function _getProcessedTextFromRun( $renderMode = 'html'){
+   protected function _getProcessedTextFromRun( $renderMode = Docx::RENDER_MODE_HTML){
        $ret = '';
        foreach ($this->_run as $run){
            /**
@@ -121,43 +121,45 @@ abstract class Node {
      * @param string $renderMode
      * @return string
      */
-   public function render($renderMode = 'html'){
+   public function render($renderMode = Docx::RENDER_MODE_HTML){
         $ret = $this->_prependOutput;
         $elementPrepend = $elementAppend = $idAttr = '';
 
-        if ($this->_type == 'w:p'){
-            if (is_object( $this->_wordStyle)){
-                if ($this->_wordStyle->getFlagGenerateHtmlId()){
-                    # Compile the text from the runarr without the prepend / appending
-                    $rawStr = $this->_getRawTextFromRun();
+        if ($renderMode == Docx::RENDER_MODE_HTML) {
+            if ($this->_type == 'w:p') {
+                if (is_object($this->_wordStyle)) {
+                    if ($this->_wordStyle->getFlagGenerateHtmlId()) {
+                        # Compile the text from the runarr without the prepend / appending
+                        $rawStr = $this->_getRawTextFromRun();
 
-                    # Construct an htmlId, then use the styleData to decide what to do with it
-                    $htmlId = Docx::getHtmlIdFromString($rawStr);
-                    $idAttr = ' id="' . $htmlId . '"';
+                        # Construct an htmlId, then use the styleData to decide what to do with it
+                        $htmlId = self::_getHtmlIdFromString($rawStr);
+                        $idAttr = ' id="' . $htmlId . '"';
 
+                    }
+
+                    $classStr = '';
+                    if ($this->_wordStyle->getHtmlClass() != '')
+                        $classStr = ' class="' . $this->_wordStyle->getHtmlClass() . '"';
+
+                    $elementPrepend .= '<' . $this->_wordStyle->getHtmlTag() . $classStr . $idAttr . '>';
+                    $elementAppend .= '</' . $this->_wordStyle->getHtmlTag() . '>';
+                } else {
+                    $elementPrepend .= '<p>';
+                    $elementAppend .= '</p>';
                 }
-
-                $classStr = '';
-                if ($this->_wordStyle->getHtmlClass() != '')
-                    $classStr = ' class="' . $this->_wordStyle->getHtmlClass() . '"';
-
-                $elementPrepend .= '<' . $this->_wordStyle->getHtmlTag() . $classStr . $idAttr .  '>';
-                $elementAppend .= '</' . $this->_wordStyle->getHtmlTag() . '>';
-            } else {
-                $elementPrepend .= '<p>';
-                $elementAppend .= '</p>';
             }
         }
-
 
         $ret .= $elementPrepend;
 
         /*
          * Apply node-level indent
          */
-       if ($this->_indent != 0)
-           $ret .= '<span class="indent ind_' . $this->_indent . '">&nbsp;</span>';
-
+       if ($renderMode == Docx::RENDER_MODE_HTML) {
+           if ($this->_indent != 0)
+               $ret .= '<span class="indent ind_' . $this->_indent . '">&nbsp;</span>';
+       }
        /*
         * Run table sys. injection
         */
@@ -212,7 +214,8 @@ abstract class Node {
        $style = '';
        if ($styleQuery->length != 0)
            $style = $styleQuery->item(0)->getAttribute('w:val');
-       return \PhilGale92Docx\Style::getFromStyleName($style) ;
+
+       return \PhilGale92Docx\Style::getFromStyleName($style, $this->_docx ) ;
    }
 
     /**
@@ -255,5 +258,28 @@ abstract class Node {
    }
 
 
+    /**
+     * @desc Converts internal docx measurment into px
+     * @param $twip int
+     * @return int
+     */
+    protected function _twipToPt($twip){
+        $px = round($twip / 20);
+        return $px;
+    }
+
+
+    /**
+     * @param $rawString string
+     * @desc Given a string, we process out any characters that cannot be output for an htmlId attribute
+     * @return string
+     */
+    protected static function _getHtmlIdFromString($rawString){
+        $ret = 'docx_' . $rawString;
+        $ret = str_replace(['&nbsp;', " "], ["", '_'], $ret);
+        $ret = trim(strip_tags($ret));
+        $ret = preg_replace("/[^A-Za-z0-9_]/", '', $ret);
+        return $ret;
+    }
 
 }

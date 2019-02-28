@@ -7,6 +7,8 @@
  */
 
 namespace PhilGale92Docx\Nodes;
+use PhilGale92Docx\Docx;
+
 /**
  * Class Run
  * @package PhilGale92Docx\Nodes
@@ -181,7 +183,7 @@ class Run extends RunDrawingLib {
      * @param string $renderMode
      * @return string
      */
-    public function getProcessedText($renderMode = 'html'){
+    public function getProcessedText($renderMode = Docx::RENDER_MODE_HTML){
         $retArr = $this->_processedRun->getProcessedText( $renderMode) ;
 
         $ret = $retArr['prepend'] . $retArr['content'];

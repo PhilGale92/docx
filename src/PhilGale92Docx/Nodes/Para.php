@@ -60,7 +60,7 @@ class Para extends Node {
         $indentQuery = $this->_docx->getXPath()->query("w:pPr/w:ind", $this->_domElement);
         if ($indentQuery->length > 0){
             $firstLineInd = $indentQuery->item(0)->getAttribute('w:firstLine');
-            $indent = (int) $this->_docx->twipToPt($firstLineInd);
+            $indent = (int) $this->_twipToPt($firstLineInd);
         }
 
         $this->_indent = $indent;

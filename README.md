@@ -6,12 +6,12 @@ Docx Parser
 
 ### Installation ###
 
-Composer (cli): `composer require philgale92/docx:2.*`
+Composer (cli): `composer require philgale92/docx:3.*`
 
 Composer (file):  Add the following to your `composer.json` file: 
 ````
     "require": {
-        "philgale92/docx": "2.*"
+        "philgale92/docx": "3.*"
     }
 ````
 
@@ -28,7 +28,7 @@ Manual: Files within `src` follow the PSR-0 format.
 * [x] Hyperlinks
 * [x] Tables (colspans, vertical merged cells etc)
 * [x] Composer support
-* [ ] Word Styles
+* [x] Word Styles
 * [ ] Textboxes
 
 
@@ -42,11 +42,29 @@ Manual: Files within `src` follow the PSR-0 format.
 $parser = new \PhilGale92Docx\Docx($absolutePathToDocxFile );
 
 /*
+ * Attach style info (if any)
+ */
+$parser->addStyle(
+    (new \PhilGale92Docx\Style())
+    ->setStyleId('0TitleName')
+    ->setIsMetaData(true)
+    ->setMetaDataRenderMode(\PhilGale92Docx\Docx::RENDER_MODE_PLAIN)
+);
+
+$parser->parse();
+
+/*
 * Now render the parser into html string  
 */
 echo $parser
     ->render('html')
 ;
+/*
+ * And grab any metaData content:
+ */
+var_dump($parser->getMetaData());
+
+
 ````
 
 ### Recommended CSS ###  
