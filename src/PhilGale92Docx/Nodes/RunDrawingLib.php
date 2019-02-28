@@ -90,9 +90,6 @@ abstract class RunDrawingLib {
                 }
             }
 
-
-
-
             # Collate the image into the parsed array
             $imageData->setRunData([
                 'type' => 'image',

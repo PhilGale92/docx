@@ -367,12 +367,20 @@ class Docx extends DocxFileManipulation {
     }
 
     /**
+     * @param string | null $styleId ( Defaults to NULL )
      * @desc Gets the system internal contents, that are populated from any styles where
      *  ->setIsSystemStyle(true) is used
      * @return DocxMetaDataAttribute[]
      */
-    public function getMetaData(){
-        return $this->_docxMetaData;
+    public function getMetaData($styleId = null ){
+        if ($styleId == null ) {
+            return $this->_docxMetaData;
+        }
+        $ret = [ ];
+        foreach ($this->_docxMetaData as $attribute ) {
+            if ($attribute->getStyleId() == $styleId) $ret[] = $attribute;
+        }
+        return $ret;
     }
 
     /**
