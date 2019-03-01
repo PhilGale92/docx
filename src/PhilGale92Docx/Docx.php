@@ -268,6 +268,12 @@ class Docx extends DocxFileManipulation {
 
             if ($currentStyleBoxName && $prevBoxIsOpen && $prevStyleBoxName != $currentStyleBoxName){
                 $nodeArr[$i - 1]->appendAdditional('</div>');
+                /*
+                 * Now we've injected the box closure due to different style names
+                 * lets mark the flag as such, so if this current node should be wrapped
+                 * then it knows what behaviour to do
+                 */
+                $prevBoxIsOpen = false;
             }
 
             if ($currentBoxIsOpen && !$prevBoxIsOpen){
