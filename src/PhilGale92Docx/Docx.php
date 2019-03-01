@@ -266,7 +266,7 @@ class Docx extends DocxFileManipulation {
             $currentBoxIsOpen = $style->getBoxSimilarSiblings();
             $currentStyleBoxName = $style->getBoxClassName();
 
-            if ($currentStyleBoxName && $prevBoxIsOpen && $prevStyleBoxName != $currentStyleBoxName){
+            if ($currentBoxIsOpen && $prevBoxIsOpen && $prevStyleBoxName != $currentStyleBoxName){
                 $nodeArr[$i - 1]->appendAdditional('</div>');
                 /*
                  * Now we've injected the box closure due to different style names
