@@ -143,6 +143,7 @@ class Docx extends DocxFileManipulation {
      * @return Node[]
      */
     protected function _parseMetaDataStylesPostProcessor( $nodeArr ){
+        $bHasUnset = false ;
         foreach ($nodeArr as $i => $node){
             $style = $node->getStyle() ;
             if ($style->getIsMetaData()){
@@ -151,8 +152,18 @@ class Docx extends DocxFileManipulation {
                     $node,
                     $node->render($style->getMetaDataRenderMode())
                 );
+                $bHasUnset =  true ;
                 unset($nodeArr[ $i ]);
             }
+        }
+
+        /*
+         * As we are removing parts of the nodeArr, we need to reset the array keys
+         * otherwise the append/prepend injection logic in other processors will hit
+         * empty lines when rewinding, and break
+         */
+        if ($bHasUnset){
+            $nodeArr = array_values($nodeArr ) ;
         }
 
         return $nodeArr;
