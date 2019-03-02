@@ -92,7 +92,7 @@ abstract class RunDrawingLib {
 
     /**
      * @desc Converts internal docx measurment into px
-     * @param $twip int
+     * @param $emu int
      * @return int
      */
     protected function _emuToPx($emu){
