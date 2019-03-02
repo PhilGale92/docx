@@ -50,7 +50,9 @@ class Docx extends DocxFileManipulation {
      * @desc Parses out internal node objects from the loaded XML structs
      */
     public function parse(){
+        if ($this->_parsed) return ;
         $this->_parsed = true ;
+
         parent::parse();
         try {
             $this->_loadNodes();
@@ -394,6 +396,8 @@ class Docx extends DocxFileManipulation {
      * @return DocxMetaDataAttribute[]
      */
     public function getMetaData($styleId = null ){
+        if ( ! $this->_parsed) $this->parse();
+
         if ($styleId == null ) {
             return $this->_docxMetaData;
         }
