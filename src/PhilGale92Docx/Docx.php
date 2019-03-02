@@ -179,17 +179,13 @@ class Docx extends DocxFileManipulation {
         $prevListLevel = 0;
 
         /*
-         * Check the last item if it has an indent level we need to ensure another iteration occurs !
+         * Inject a fake item, to ensure we can close out any injections properly
          */
         if (!empty($nodeArr)) {
-            $nodeEnd = end($nodeArr);
-            if ($nodeEnd->getListLevel() > 0 ) {
-                $fauxItem = new Nodes\FauxList(
-                    $this, null
-                );
-
-                $nodeArr[] = $fauxItem ;
-            }
+            $fauxItem = new Nodes\FauxList(
+                $this, null
+            );
+            $nodeArr[] = $fauxItem ;
         }
 
         foreach ($nodeArr as $i =>  $node ) {
