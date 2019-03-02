@@ -20,7 +20,6 @@ Manual: Files within `src` follow the PSR-0 format.
 
 ### Supports ### 
 
-* [x] Rewritten element loader (to respect element order properly...)
 * [x] Paragraphs (basic text)
 * [x] Text attributes (bold, underline, italic, tabbed, sub & sup script) 
 * [x] Images
@@ -29,6 +28,7 @@ Manual: Files within `src` follow the PSR-0 format.
 * [x] Tables (colspans, vertical merged cells etc)
 * [x] Composer support
 * [x] Word Styles
+* [x] Custom attribute loading (see usage)
 * [ ] Textboxes
 
 
@@ -44,10 +44,29 @@ $parser = new \PhilGale92Docx\Docx($absolutePathToDocxFile );
 /*
  * Attach style info (if any)
  */
+ $parser->addStyle(
+     (new \PhilGale92Docx\Style())
+     ->setStyleId('standardPara')
+     ->setHtmlClass('custom')
+     ->setHtmlTag('p')
+ );
+
+
+ /*
+  * Here is an example of a MetaData attribute style 
+  * (Lets pull out the titleStyle directly)
+  */
 $parser->addStyle(
     (new \PhilGale92Docx\Style())
     ->setStyleId('0TitleName')
+    
+    // By setting this as metaData, we can pull in 
+    // any content where this style is used in a seperate call.
+    // It also removes the content from the standard render 
+    
     ->setIsMetaData(true)
+    // By default the metaData is parsed as HTML
+    // But if you need to get the literal plain text then we can do that too  
     ->setMetaDataRenderMode(\PhilGale92Docx\Docx::RENDER_MODE_PLAIN)
 );
 
