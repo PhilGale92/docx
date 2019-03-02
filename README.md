@@ -105,7 +105,7 @@ $parser->addStyle(
 /*
  * Now parse the xml into internal objects
 */
-$parser->parse();
+$parser->parse(); // Optional, ran automatically by ->render() if not ran yet
 
 /*
 * Now render the parser into html string  

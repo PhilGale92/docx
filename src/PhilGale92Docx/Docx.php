@@ -40,11 +40,17 @@ class Docx extends DocxFileManipulation {
      * @desc Track constructed Nodes
      */
     protected $_constructedNodes = [];
+    /**
+     * @var bool
+     * @desc Tracks to see if we have parsed content or not
+     */
+    private $_parsed = false;
 
     /**
      * @desc Parses out internal node objects from the loaded XML structs
      */
     public function parse(){
+        $this->_parsed = true ;
         parent::parse();
         try {
             $this->_loadNodes();
@@ -300,6 +306,8 @@ class Docx extends DocxFileManipulation {
      * @return string
      */
     public function render($renderViewType = self::RENDER_MODE_HTML){
+        if ( ! $this->_parsed) $this->parse();
+
         $ret = '';
         foreach ($this->_constructedNodes as $constructedNode){
             $ret .=  $constructedNode->render($renderViewType);
