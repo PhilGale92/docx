@@ -72,23 +72,29 @@ class Run extends RunDrawingLib {
                 /**
                  * @var $docxStyleElement \DOMElement
                  */
+                $valAttrib = (string ) $docxStyleElement->getAttribute('w:val');
                 switch ($docxStyleElement->nodeName){
                     case 'w:vertAlign':
-                        $vertAttrib = $docxStyleElement->getAttribute('w:val');
-                        if ($vertAttrib == 'superscript'){
+                        if ($valAttrib === 'superscript'){
                             $processedRun->setAttributeSupScript(true);
-                        } else if ($vertAttrib == 'subscript'){
+                        } else if ($valAttrib === 'subscript'){
                             $processedRun->setAttributeSubScript(true);
                         }
                         break;
                     case 'w:i':
-                        $processedRun->setAttributeItalic(true);
+                        if ($valAttrib !== '0' && $valAttrib !== 'none' && $valAttrib !== ''){
+                            $processedRun->setAttributeItalic(true);
+                        }
                         break;
                     case 'w:b':
-                        $processedRun->setAttributeBold(true);
+                        if ($valAttrib !== '0' && $valAttrib !== 'none' && $valAttrib !== ''){
+                            $processedRun->setAttributeBold(true);
+                        }
                         break;
                     case 'w:u':
-                        $processedRun->setAttributeUnderline(true);
+                        if ($valAttrib !== '0' && $valAttrib !== 'none' && $valAttrib !== ''){
+                            $processedRun->setAttributeUnderline(true);
+                        }
                         break;
                 }
             }
