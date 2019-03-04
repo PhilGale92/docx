@@ -48,7 +48,7 @@ $parser = new \PhilGale92Docx\Docx($absolutePathToDocxFile );
      (new \PhilGale92Docx\Style())
      ->setStyleId('standardPara')
      ->setHtmlClass('custom')
-     ->setHtmlTag('p')
+     ->setHtmlTag('p') // 'p' is default behaviour 
  );
 
 
