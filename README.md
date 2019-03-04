@@ -115,6 +115,7 @@ echo $parser
 ;
 /*
  * We can grab any metaData content after ->parse() is performed
+ * ->getMetaData() runs ->parse() if not ran yet
 */
 var_dump(
     $parser->getMetaData() // also takes $styleId of metaData as an argument
