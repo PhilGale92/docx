@@ -92,6 +92,21 @@ abstract class DocxFileManipulation {
     }
 
     /**
+     * @param $imageName string
+     * @param $imageData string
+     * @desc Override if you want to extend the fileAttachment object to be customised
+     * @return FileAttachment
+     */
+    protected function _createFileAttachmentFromSource(
+        $imageName, $imageData
+    ){
+        return new FileAttachment(
+            $imageName,
+            $imageData
+        );
+    }
+
+    /**
      * @desc Unzip and track the useful files
      *  - We need to track relationships, the main structure and any image assets
      */
@@ -120,10 +135,7 @@ abstract class DocxFileManipulation {
                 $imageData = base64_encode(
                     zip_entry_read($zipEntry, zip_entry_filesize( $zipEntry )  )
                 );
-                $this->_fileAttachments[$imageName] = new FileAttachment(
-                    $imageName,
-                    $imageData
-                );
+                $this->_fileAttachments[$imageName] = $this->_createFileAttachmentFromSource($imageName, $imageData);
             }
             zip_entry_close($zipEntry) ;
         }
@@ -134,11 +146,13 @@ abstract class DocxFileManipulation {
         $this->_processStyleInfo();
     }
 
+
+
     /**
      * @desc Process the xmlRelations into link
      * mappings, and pull out any additional image data that is available !
      */
-    protected function _processRelationships(){
+    private function _processRelationships(){
         if ($this->_xmlRelations != '') {
             $dom = new \DOMDocument();
             $dom->loadXML($this->_xmlRelations, LIBXML_NOENT | LIBXML_XINCLUDE | LIBXML_NOERROR | LIBXML_NOWARNING);
@@ -171,7 +185,7 @@ abstract class DocxFileManipulation {
     /**
      * @desc Process the style info
      */
-    protected function _processStyleInfo(){
+    private function _processStyleInfo(){
         $dom = new \DOMDocument();
         $dom->loadXML($this->_xmlStyles, LIBXML_NOENT | LIBXML_XINCLUDE | LIBXML_NOERROR | LIBXML_NOWARNING);
         $dom->encoding = 'utf-8';

@@ -27,18 +27,15 @@ abstract class RunDrawingLib {
      * @return \PhilGale92Docx\FileAttachment|null
      */
     protected function _loadDrawingData(){
-
         /*
          * Query 'blip' for the image relation id, that allows us to get the FileAttachment object
          */
-        $mcAltContentXPath = $this->_docx->getXPath()->query(".//a:graphic/a:graphicData/pic:pic/pic:blipFill/a:blip", $this->_runElementNode);
-        if ($mcAltContentXPath->length == 0) return null;
-        $blipNode = $mcAltContentXPath->item(0);
+        $blipQuery = $this->_docx->getXPath()->query(".//pic:blipFill/a:blip", $this->_runElementNode);
+        if ($blipQuery->length == 0) return null;
 
         # Get the imageToUseId by searching the blip node for an id
         $imageToUseId = null;
-
-        foreach ($blipNode->attributes as $blipEmbedNode) {
+        foreach ($blipQuery->item(0)->attributes as $blipEmbedNode) {
             if ($blipEmbedNode->nodeName == 'r:embed') {
                 $imageToUseId = $blipEmbedNode->nodeValue;
                 break;
@@ -58,7 +55,7 @@ abstract class RunDrawingLib {
         /*
          * Query for width/height override attributes (if any)
          */
-        $extentQuery = $this->_docx->getXPath()->query(".//wp:inline//wp:extent", $this->_runElementNode);
+        $extentQuery = $this->_docx->getXPath()->query(".//wp:extent", $this->_runElementNode);
         if ($extentQuery->length > 0 ) {
             $cxVal = $cyVal = null ;
             foreach ($extentQuery->item(0)->attributes as $attribute){
@@ -77,21 +74,42 @@ abstract class RunDrawingLib {
             if ($cyVal != null && $cyVal > 0 ) $h = $cyVal;
         }
 
-        # Collate the image into the parsed array
-        $imageData->setRunData([
-            'type' => 'image',
-            'name' => $imageData->getFileName(),
-            'h' => $h,
-            'w' => $w,
-            'data' => $imageData->getFileData()
-        ]);
+        /*
+         * Reapply the loaded dimensions back into the image object
+         */
+        $imageData->setWidth($w);
+        $imageData->setHeight($h);
+
+
+        /*
+         * Query for crop info & apply to image
+         */
+        $cropQuery = $this->_docx->getXPath()->query(".//a:srcRect", $this->_runElementNode);
+        if ($cropQuery->length > 0 ) {
+            foreach ($cropQuery->item(0)->attributes as $attributeNode) {
+                /**
+                 * @var $attributeNode \DOMAttr
+                 */
+                $attrVal = (int) $attributeNode->nodeValue;
+
+                if ($attributeNode->nodeName == 'b'){
+                    $imageData->setCropBottom($attrVal);
+                } else if ($attributeNode->nodeName == 't'){
+                    $imageData->setCropTop($attrVal);
+                } else if ($attributeNode->nodeName == 'l'){
+                    $imageData->setCropLeft($attrVal);
+                } else if ($attributeNode->nodeName == 'r'){
+                    $imageData->setCropRight($attrVal);
+                }
+            }
+        }
 
         return $imageData;
     }
 
 
     /**
-     * @desc Converts internal docx measurment into px
+     * @desc Converts internal docx measurement into px
      * @param $emu int
      * @return int
      */
