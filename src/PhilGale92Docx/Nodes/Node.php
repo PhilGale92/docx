@@ -269,7 +269,7 @@ abstract class Node {
      * @return int
      */
     protected function _twipToPt($twip){
-        $px = round($twip / 20);
+        $px = round(intval($twip) / 20);
         return $px;
     }
 
