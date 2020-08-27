@@ -216,7 +216,7 @@ class Docx extends DocxFileManipulation {
                     }
                 }
                 if ($styleData->getHtmlClass() != '')
-                    $classInject = $styleData->getHtmlClass() . '"';
+                    $classInject = $styleData->getHtmlClass();
             }
 
 
